@@ -8,65 +8,93 @@
 import SwiftUI
 
 struct ContentView: View {
-    @State var alive: [Species] = [gen(), gen()]
+    @State var alive: [Species] = [Species(name: "x", speed: 7, lifespan: 100000)]
     @State var deathCount: Int = 0
     @State var birthCount: Int = 0
     @State var deathRate: Double = 1
-    let timer = Timer.publish(every: 0.02, on: .main, in: .common).autoconnect()
+    @State var deathAnimation: Bool = false
+    @State var currentPopulation = 0
+    @State private var speed: Double = 1
+    @State var timer = Timer.publish(every: 0.01, on: .main, in: .default).autoconnect()
     var body: some View {
-        ZStack {
-            Rectangle()
-                .frame(width: 390, height: 500, alignment: .topLeading)
-                .opacity(0.2)
-            VStack {
-                Text("death count: \(deathCount)")
-                Text("birth count: \(birthCount)")
-                Button(action: {
-                    respawn(&alive)
-                    deathCount = 0
-                    birthCount = 0
-                    deathRate = 1
-                }){
-                    Text("restart simulation")
+        GeometryReader { frame in
+            ZStack {
+                RoundedRectangle(cornerRadius: 10)
+                    .frame(width: frame.size.width / 1.2 + 10, height: frame.size.height / 1.5 + 10, alignment: .center)
+                    .foregroundColor(.gray)
+                    .overlay(RoundedRectangle(cornerRadius: 8).frame(width: frame.size.width / 1.2, height: frame.size.height / 1.5, alignment: .center).foregroundColor(.white))
+                VStack(alignment: .leading) {
+                    Text("Current population size: \(currentPopulation)")
                         .fontWeight(.heavy)
+                        .font(.title2)
+                    Text("death count: \(deathCount)")
                         .font(.caption)
-                        .padding()
-                        .background(Color.pink)
-                        .clipShape(Capsule())
+                    Text("birth count: \(birthCount)")
+                        .font(.caption)
+                    Button(action: {
+                        respawn(&alive)
+                        deathCount = 0
+                        birthCount = 0
+                        deathRate = 1
+                    }){
+                        Text("Restart simulation")
+                            .fontWeight(.heavy)
+                            .font(.caption)
+                            .padding(8)
+                            .background(Color.pink)
+                            .clipShape(Capsule())
+                    }
+                    .buttonStyle(PlainButtonStyle())
                 }
-                .buttonStyle(PlainButtonStyle())
-            }
-                .frame(width: 375, height: 650, alignment: .top)
-            ForEach(0..<alive.count, id: \.self) { n in
-                Circle()
-                    .frame(width: 20, height: 20)
-                    .foregroundColor(.pink)
-                    .opacity(0.2)
-                    .position(x: CGFloat(alive[n].xpos), y: CGFloat(alive[n].ypos))
-                    .onReceive(timer, perform: { _ in
-                        if n < alive.count {
-                            alive[n].updatePos(deathRate)
-                            if alive[n].die() {
-                                alive.remove(at: n)
-                                deathCount += 1
-                            }
-                            if random() {
-                                alive = alive + [gen()]
-                                if alive.count >= 20 {
-                                    deathRate = 0.9 - 0.0001*Double((alive.count - 20))
-                                }
-                                print(alive.count)
-                                birthCount += 1
-                            }
+                .padding(.leading)
+                .frame(width: frame.size.width, height: frame.size.height*0.95, alignment: .topLeading)
+                VStack {
+                    ZStack {
+                        ForEach(0..<alive.count, id: \.self) { n in
+                            Circle()
+                                .overlay(Circle().stroke(lineWidth: 1.5).foregroundColor(.black))
+                                .frame(width: 20, height: 20)
+                                .foregroundColor(alive[n].color)
+                                .animation(.easeIn(duration: 3))
+                                .opacity(0.4)
+                                .position(x: CGFloat(alive[n].xpos), y: CGFloat(alive[n].ypos))
+                                .onReceive(timer, perform: { _ in
+                                    if n < alive.count {
+                                        alive[n].updatePos()
+                                        if alive[n].die() {
+                                            alive.remove(at: n)
+                                            deathCount += 1
+                                            deathAnimation.toggle()
+                                        }
+                                        if rate(0.995) {
+                                            if alive.count < 100 {
+                                                alive.append(rate(0.5) ? gen() : Species(name: "p", speed: alive.map {$0.speed}.reduce(0, +)/Double(alive.count), lifespan: alive.map {$0.lifespan}.reduce(0, +)/alive.count))
+                                                birthCount += 1
+                                            }
+                                            else {
+                                                var m = 1
+                                                for _ in 0..<alive.count {
+                                                    if rate(0.02) == true {
+                                                        m = m*1
+                                                    }
+                                                    else {
+                                                        m = m*0
+                                                    }
+                                                }
+                                                if m == 1 {
+                                                    alive.append(rate(0.5) ? gen() : Species(name: "p", speed: alive.map {$0.speed}.reduce(0, +)/Double(alive.count), lifespan: alive.map {$0.lifespan}.reduce(0, +)/alive.count))
+                                                }
+                                            }
+                                        }
+                                    }
+                                    currentPopulation = alive.count
+                                })
                         }
-                    })
+                    }
+                }
             }
         }
     }
-}
-
-func random() -> Bool {
-    Int.random(in: 0..<1000) == 4
 }
 
 func respawn(_ x: inout [Species]) {
@@ -78,4 +106,6 @@ struct ContentView_Previews: PreviewProvider {
         ContentView()
     }
 }
+
+
 
