@@ -14,6 +14,7 @@
 		84154AB1252FB91C009B5806 /* evolutionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84154AB0252FB91C009B5806 /* evolutionTests.swift */; };
 		84154ABC252FB91C009B5806 /* evolutionUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84154ABB252FB91C009B5806 /* evolutionUITests.swift */; };
 		84154ACD252FB95B009B5806 /* CoreLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84154ACC252FB95B009B5806 /* CoreLogic.swift */; };
+		84DC23422535B04800E04074 /* Cell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84DC23412535B04800E04074 /* Cell.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -47,6 +48,7 @@
 		84154ABB252FB91C009B5806 /* evolutionUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = evolutionUITests.swift; sourceTree = "<group>"; };
 		84154ABD252FB91C009B5806 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		84154ACC252FB95B009B5806 /* CoreLogic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreLogic.swift; sourceTree = "<group>"; };
+		84DC23412535B04800E04074 /* Cell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Cell.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -101,6 +103,7 @@
 				84154ACC252FB95B009B5806 /* CoreLogic.swift */,
 				84154AA0252FB91B009B5806 /* ContentView.swift */,
 				84154AA2252FB91C009B5806 /* Assets.xcassets */,
+				84DC23412535B04800E04074 /* Cell.swift */,
 				84154AA7252FB91C009B5806 /* Info.plist */,
 				84154AA4252FB91C009B5806 /* Preview Content */,
 			);
@@ -263,6 +266,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				84154AA1252FB91B009B5806 /* ContentView.swift in Sources */,
+				84DC23422535B04800E04074 /* Cell.swift in Sources */,
 				84154A9F252FB91B009B5806 /* evolutionApp.swift in Sources */,
 				84154ACD252FB95B009B5806 /* CoreLogic.swift in Sources */,
 			);

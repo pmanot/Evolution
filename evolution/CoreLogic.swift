@@ -9,9 +9,26 @@ import Foundation
 import SwiftUI
 
 
+
+public final class Environment: ObservableObject {
+    var bounds = Bounds(left: 50, right: 360, up: 150, down: 660)
+}
+
+struct Bounds: Hashable {
+    var left: CGFloat
+    var right: CGFloat
+    var up: CGFloat
+    var down: CGFloat
+}
+
 struct Food {
     var id = UUID()
     var energy = 10
+}
+
+struct Point: Hashable {
+    var x: CGFloat
+    var y: CGFloat
 }
 
 struct Species: Identifiable, Hashable {
@@ -20,81 +37,96 @@ struct Species: Identifiable, Hashable {
     var color: Color = .green
     var speed: Double
     var lifespan: Int
-    var xpos: Double = 200
-    var ypos: Double = 400
+    var disabled: Bool
+    var coordinates: Point = Point(x: 200, y: 400)
+    var bounds: Bounds
     var infected: Bool = false
-    var dir = Double.random(in: 0..<2*(.pi))
-    init(name: String, speed: Double, lifespan: Int..., infected: Bool = false) {
+    var dir = CGFloat.random(in: 0..<2*(.pi))
+    var calclatedCoordinates: [Int] = []
+    init(name: String, speed: Double, lifespan: Int..., infected: Bool = false, coordinates: Point = Point(x: 200, y: 400), bounds: Bounds = Bounds(left: 50, right: 360, up: 160, down: 660)) {
         self.identifier = name
         self.speed = speed
         self.lifespan = (lifespan.reduce(0, +) / lifespan.count) + Int.random(in: 0..<5)
         self.infected = infected
-        if self.speed <= 2 {
-            self.color = .red
+        self.coordinates = coordinates
+        self.bounds = bounds
+        switch speed {
+        case 0..<2:
+            color = .purple
+        case 6..<10:
+            color = .yellow
+        default:
+            color = .blue
         }
-        else if self.speed <= 5 {
-            self.color = .yellow
-        }
-        else {
-            self.color = .green
-        }
+        self.disabled = false
     }
     
-    mutating func updatePos(_ dC: Double = 1) {
-        xpos += sin(dir)*speed/2
-        ypos += cos(dir)*speed/2
-        updateDir()
-        lifespan += -1 // 1 step
-        if rate(dC) {
-            lifespan = 0
+    mutating func updatePos(_ dC: Double = 1) { // updates the xy position of a cell (called at fixed intervals of time)
+        if !disabled {
+            coordinates.x += sin(dir)*CGFloat(speed)/2
+            coordinates.y += cos(dir)*CGFloat(speed)/2
+            updateDir()
+            lifespan += -1 // 1 step
+            avoidBounds()
         }
-        if xpos > 360 {
-            xpos = 360
-            dir = Double.random(in: 0..<2*(.pi))
-        }
-        if xpos < 50 {
-            xpos = 50
-            dir = Double.random(in: 0..<2*(.pi))
-        }
-        if ypos > 660 {
-            ypos = 660
-            dir = Double.random(in: 0..<2*(.pi))
-        }
-        if ypos < 150 {
-            ypos = 150
-            dir = Double.random(in: 0..<2*(.pi))
-        }
-        
+        disabled = lifespan == 0
     }
-    mutating func updateDir(_ rStart: Double = -0.05, _ rEnd: Double = 0.05) {
-        dir += Double.random(in: rStart..<rEnd)
+    
+    mutating func updateDir(_ rStart: CGFloat = -0.05, _ rEnd: CGFloat = 0.05) { //changes the direction of a cell
+        dir += CGFloat.random(in: rStart..<rEnd)
         if dir > 2*(.pi) || dir < 0 {
-            dir = Double.random(in: 0..<2*(.pi))
+            dir = CGFloat.random(in: 0..<2*(.pi))
         }
     }
     
-    mutating func die() -> Bool {
-        if lifespan == 0 {
-            withAnimation {
-                self.color = .red
-            }
-            return true
+    func onDeath(_ x: () -> ()) {
+        if disabled {
+            x()
         }
-        return false
+    }
+    
+    mutating func avoidBounds() {
+        if coordinates.x < bounds.left {
+            coordinates.x = bounds.left
+            dir = CGFloat.random(in: 0..<2*(.pi))
+        }
+        if coordinates.x > bounds.right {
+            coordinates.x = bounds.right
+            dir = CGFloat.random(in: 0..<2*(.pi))
+        }
+        if coordinates.y > bounds.down {
+            coordinates.y = bounds.down
+            dir = CGFloat.random(in: 0..<2*(.pi))
+        }
+        if coordinates.y < bounds.up {
+            coordinates.y = bounds.up
+            dir = CGFloat.random(in: 0..<2*(.pi))
+        }
     }
 }
 
-func gen() -> Species {
-    Species(name: "X \(String(Int.random(in: 0..<23)))", speed: Double.random(in: 0..<10), lifespan: Int.random(in: 100..<1000))
+func gen(coordinates: Point) -> Species {
+    Species(name: "M", speed: Double.random(in: 0..<10), lifespan: Int.random(in: 100..<1000), coordinates: coordinates)
 }
 
-enum Edge: CGFloat {
-    case left = 20
-    case right = 350
-    case top = 650
-    case bottom = 100
+enum Energy: Int {
+    case low = 2
+    case medium = 5
+    case high = 8
 }
 
-func rate(_ x: Double) -> Bool {
+func rate(_ x: Double) -> (Bool) {
     !(Int.random(in: 0..<10000) <= Int(x*10000))
+}
+
+func rate(_ x: Double, _ m: () -> ()) {
+    if !(Int.random(in: 0..<10000) <= Int(x*10000)) {
+        m()
+    }
+}
+
+extension Point {
+    func cg() -> CGPoint {
+        CGPoint(x: self.x, y: self.y)
+    }
 }
