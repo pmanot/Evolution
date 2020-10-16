@@ -13,9 +13,11 @@ struct ContentView: View {
     @State var birthCount: Int = 0
     @State var deathRate: Double = 1
     @State var currentPopulation = 0
+    @State var maxPopulationSize = 10
     @State var runloop = counter(50)
+    @State var foodLoop = counter(2)
     @State private var speed: Double = 1
-    @Namespace private var animation
+    @EnvironmentObject var env: Environment
     let timer = Timer.publish(every: 0.01, on: .main, in: .default).autoconnect()
     var body: some View {
         GeometryReader { frame in
@@ -28,9 +30,11 @@ struct ContentView: View {
                     Text("Current population size: \(currentPopulation)")
                         .fontWeight(.heavy)
                         .font(.title2)
-                    Text("Purav death count: \(deathCount)")
+                    Text("death count: \(deathCount)")
+                        .fontWeight(.light)
                         .font(.caption)
                     Text("birth count: \(birthCount)")
+                        .fontWeight(.light)
                         .font(.caption)
                     Button(action: {
                         respawn(&alive)
@@ -51,42 +55,51 @@ struct ContentView: View {
                 .frame(width: frame.size.width, height: frame.size.height*0.95, alignment: .topLeading)
                 VStack {
                     ZStack {
+                        FoodView(env.food)
                         ForEach(0..<alive.count, id: \.self) { n in
-                                Cell(alive[n], .square)
-                                    .onReceive(timer) { _ in
-                                        if n < alive.count { // make sure alive[n] is a valid index
-                                            alive[n].updatePos()
-                                            alive[n].onDeath { // when cell dies
-                                                withAnimation(.easeIn) {
-                                                    alive[n].color = .black
-                                                }
-                                                runloop(){
-                                                    alive.remove(at: n)
-                                                    deathCount += 1
-                                                    runloop = counter(50)
-                                                }
+                            Cell(alive[n], .square)
+                                .onReceive(timer) { _ in
+                                    safeForIn(n, alive.count) { // make sure alive[n] is a valid index (sometimes n goes out of bounds while running due to glitchy behaviour with ForEach).
+                                        alive[n].updatePos()
+                                        alive[n].onDeath { // when cell dies
+                                            withAnimation(.easeInOut(duration: 0.4)) {
+                                                alive[n].color = .black
                                             }
-                                            rate(0.995) {
-                                                if alive.count < 20 {
-                                                    alive.append(rate(0.5) ? gen(coordinates: alive[n].coordinates) : Species(name: "p", speed: alive.map {$0.speed}.reduce(0, +)/Double(alive.count), lifespan: alive.map {$0.lifespan}.reduce(0, +)/alive.count))
-                                                    birthCount += 1
-                                                }
+                                            runloop(){ // run counter
+                                                alive.remove(at: n)
+                                                deathCount += 1
+                                                runloop = counter(50) // reset counter
                                             }
                                         }
-                                        currentPopulation = alive.count
+                                        alive[n].eatFood(&env.food, alive)
+                                        if alive.count < maxPopulationSize { // making sure new births only happen if the population is lower than its peak
+                                            rate(0.005) {
+                                                alive.append(offspring(alive[n], b: gen(coordinates: alive[n].coordinates)))
+                                                birthCount += 1 //increase birthCount
+                                            }
+                                        }
                                     }
-                                    .opacity(alive[n].disabled ? 0.5 : 1)
+                                    currentPopulation = alive.count
+                                }
+                                .opacity(alive[n].disabled ? 0.5 : 1)
                         }
+                    }
+                    VStack(spacing: 2) {
+                        Text("Population size cap")
+                            .fontWeight(.light)
+                            .font(.subheadline)
+                        Picker("Population size cap", selection: $maxPopulationSize){
+                            Text("5").tag(5)
+                            Text("10").tag(10)
+                            Text("25").tag(25)
+                            Text("50").tag(50)
+                        }
+                        .pickerStyle(SegmentedPickerStyle())
+                        .frame(width: 200)
                     }
                 }
             }
         }
-    }
-}
-
-extension BinaryInteger {
-    mutating func reset() {
-        self = 0
     }
 }
 
@@ -97,7 +110,7 @@ func respawn(_ x: inout [Species]) {
 func counter(_ initialCount: Int) -> (() -> Void) -> () {
     var i = initialCount
     func countDown(_ x: () -> Void) -> () {
-        i += -1
+        i -= 1
         if i == 0 {
             x()
         }
@@ -105,10 +118,10 @@ func counter(_ initialCount: Int) -> (() -> Void) -> () {
     return countDown
 }
 
-
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         ContentView()
+            .environmentObject(Environment())
     }
 }
 

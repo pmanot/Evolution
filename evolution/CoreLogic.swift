@@ -12,6 +12,10 @@ import SwiftUI
 
 public final class Environment: ObservableObject {
     var bounds = Bounds(left: 50, right: 360, up: 150, down: 660)
+    var food: [Food]
+    init(min: Int = 30, max: Int = 45) {
+        food = genFood(min: min, max: max)
+    }
 }
 
 struct Bounds: Hashable {
@@ -23,8 +27,14 @@ struct Bounds: Hashable {
 
 struct Food: Identifiable, Hashable {
     var id = UUID()
-    var energy = 10
-    var color: Color = .green
+    var energy: Double
+    var color: Color
+    var position: Point = Point(x: 200, y: 400)
+    init(energy: Double, color: Color, position: Point) {
+        self.energy = energy
+        self.color = color
+        self.position = position
+    }
 }
 
 struct Point: Hashable, Strideable {
@@ -68,13 +78,15 @@ struct Species: Identifiable, Hashable {
     var bounds: Bounds
     var infected: Bool = false
     var dir = CGFloat.random(in: 0..<2*(.pi))
-    init(name: String, speed: Double, lifespan: Int..., infected: Bool = false, coordinates: Point = Point(x: 200, y: 400), bounds: Bounds = Bounds(left: 50, right: 360, up: 160, down: 660)) {
+    var sightRadius: Double
+    init(name: String, speed: Double, lifespan: Int, sight: Double, infected: Bool = false, coordinates: Point = Point(x: 200, y: 400), bounds: Bounds = Bounds(left: 50, right: 360, up: 160, down: 660)) {
         self.identifier = name
         self.speed = speed
-        self.lifespan = (lifespan.reduce(0, +) / lifespan.count) + Int.random(in: 0..<5)
+        self.lifespan = lifespan
         self.infected = infected
         self.coordinates = coordinates
         self.bounds = bounds
+        self.sightRadius = sight
         switch speed {
         case 0..<2:
             color = .purple
@@ -128,10 +140,37 @@ struct Species: Identifiable, Hashable {
             dir = CGFloat.random(in: 0..<2*(.pi))
         }
     }
+    
+    mutating func consume(_ food: Food) {
+        self.lifespan += Int(food.energy*Double(1000))
+    }
+    
+    mutating func eatFood(_ food: inout [Food], _ alive: [Species]) {
+        for f in 0..<food.count {
+            safeForIn(f, food.count) {
+                if self.coordinates.inRange(of: food[f].position, radius: 5) {
+                    self.consume(food[f])
+                    food.remove(at: f)
+                }
+            }
+        }
+    }
 }
 
 func gen(coordinates: Point) -> Species {
-    Species(name: "M", speed: Double.random(in: 0..<10), lifespan: Int.random(in: 100..<1000), coordinates: coordinates)
+    Species(name: "M", speed: Double.random(in: 0..<10), lifespan: Int.random(in: 100..<1000), sight: Double.random(in: 2..<5), coordinates: coordinates)
+}
+
+
+func offspring(_ a: Species, b: Species) -> Species {
+    Species(name: a.identifier + b.identifier, speed: (a.speed + b.speed)/2 , lifespan: (a.lifespan + b.lifespan)/2, sight: (a.sightRadius + b.sightRadius)/2)
+}
+func genFood(min: Int, max: Int) -> [Food] {
+    var final: [Food] = []
+    for _ in 0..<Int.random(in: min..<max) {
+        final.append(Food(energy: Double.random(in: 0..<10), color: Bool.random() ? .green : .pink, position: randomPoint()))
+    }
+    return final
 }
 
 enum Energy: Int {
@@ -140,12 +179,9 @@ enum Energy: Int {
     case high = 8
 }
 
-func rate(_ x: Double) -> (Bool) {
-    !(Int.random(in: 0..<10000) <= Int(x*10000))
-}
 
 func rate(_ x: Double, _ m: () -> ()) {
-    if !(Int.random(in: 0..<10000) <= Int(x*10000)) {
+    if Int.random(in: 0..<10000) <= Int(x*10000) {
         m()
     }
 }
@@ -156,3 +192,18 @@ extension Point {
     }
 }
 
+extension BinaryInteger {
+    mutating func reset() {
+        self = 0
+    }
+}
+
+func randomPoint(bounds: Bounds = Bounds(left: 50, right: 360, up: 160, down: 660)) -> Point {
+    Point(x: CGFloat.random(in: bounds.left..<bounds.right), y: CGFloat.random(in: bounds.up..<bounds.down))
+}
+
+func safeForIn(_ n: Int, _ limit: Int, _ x: () -> ()){
+    if n < limit {
+        x()
+    }
+}

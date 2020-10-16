@@ -8,7 +8,6 @@
 import SwiftUI
 
 struct Cell: View {
-    @EnvironmentObject var env: Environment
     var some_species: Species
     var style: CellStyle = .circle
     var color: Color
