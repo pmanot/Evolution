@@ -49,3 +49,4 @@ struct Cell_Previews: PreviewProvider {
         Cell(gen(coordinates: Point(x: 210, y: 400)), .square)
     }
 }
+

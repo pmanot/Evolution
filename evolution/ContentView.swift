@@ -13,7 +13,7 @@ struct ContentView: View {
     @State var birthCount: Int = 0
     @State var deathRate: Double = 1
     @State var currentPopulation = 0
-    @State var runCount: Int = 0
+    @State var runloop = counter(50)
     @State private var speed: Double = 1
     @Namespace private var animation
     let timer = Timer.publish(every: 0.01, on: .main, in: .default).autoconnect()
@@ -60,13 +60,10 @@ struct ContentView: View {
                                                 withAnimation(.easeIn) {
                                                     alive[n].color = .black
                                                 }
-                                                if runCount == 0 {
-                                                    deathCount.increment(1) // increase death counter by 1
-                                                }
-                                                runCount += 1
-                                                if runCount == 100 {
+                                                runloop(){
                                                     alive.remove(at: n)
-                                                    runCount.reset()
+                                                    deathCount += 1
+                                                    runloop = counter(50)
                                                 }
                                             }
                                             rate(0.995) {
@@ -87,20 +84,27 @@ struct ContentView: View {
     }
 }
 
-extension Int {
-    mutating func increment(_ x: Int) {
-        self += x
-    }
-    
+extension BinaryInteger {
     mutating func reset() {
         self = 0
     }
 }
 
-
 func respawn(_ x: inout [Species]) {
     x = [gen(coordinates: Point(x: 200, y: 400)), gen(coordinates: Point(x: 200, y: 400))]
 }
+
+func counter(_ initialCount: Int) -> (() -> Void) -> () {
+    var i = initialCount
+    func countDown(_ x: () -> Void) -> () {
+        i += -1
+        if i == 0 {
+            x()
+        }
+    }
+    return countDown
+}
+
 
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
