@@ -11,7 +11,8 @@ struct Cell: View {
     var some_species: Species
     var style: CellStyle = .circle
     var color: Color
-    init(_ species: Species, _ style: CellStyle = .circle) {
+    @EnvironmentObject var env: Environment
+    init(_ species: Species, style: CellStyle = .circle) {
         some_species = species
         self.style = style
         color = species.color
@@ -28,12 +29,21 @@ struct Cell: View {
                 .position(some_species.coordinates.cg())
         
         case .square:
-            Rectangle()
-                .opacity(0.4)
-                .overlay(Rectangle().stroke(lineWidth: 2).foregroundColor(.black).opacity(0.8))
-                .frame(width: 15, height: 15)
-                .foregroundColor(color)
-                .position(some_species.coordinates.cg())
+            ZStack {
+                Rectangle()
+                    .opacity(0.4)
+                    .overlay(Rectangle().stroke(lineWidth: 2).foregroundColor(.black).opacity(0.8))
+                    .frame(width: 15, height: 15)
+                    .foregroundColor(color)
+                    .position(some_species.coordinates.cg())
+                if some_species.foodEaten {
+                    Rectangle()
+                        .opacity(0.4)
+                        .overlay(Rectangle().stroke(lineWidth: 2).foregroundColor(.black).opacity(0.8))
+                        .frame(width: 4, height: 4)
+                        .position(some_species.coordinates.cg())
+                }
+            }
         }
     }
 }
@@ -45,7 +55,8 @@ enum CellStyle {
 
 struct Cell_Previews: PreviewProvider {
     static var previews: some View {
-        Cell(gen(coordinates: Point(x: 210, y: 400)), .square)
+        Cell(gen(coordinates: Point(x: 200, y: 400), Environment().bounds))
+            .environmentObject(Environment())
     }
 }
 
