@@ -17,51 +17,71 @@ struct ContentView: View {
     @State var foodLoop = counter(2)
     @State private var speed: Double = 1
     @EnvironmentObject var env: Environment
-    let timer = Timer.publish(every: 0.01, on: .main, in: .default).autoconnect()
+    let timer = Timer.publish(every: 0.02, on: .main, in: .default).autoconnect()
     var body: some View {
         VStack(alignment: .leading) {
-            Text("Current population size: \(currentPopulation)")
-                .fontWeight(.heavy)
-                .font(.title2)
-            Text("death count: \(deathCount)")
-                .fontWeight(.light)
-                .font(.caption)
-            Text("birth count: \(birthCount)")
-                .fontWeight(.light)
-                .font(.caption)
+            VStack(alignment: .leading) {
+                Text("Current population size: \(currentPopulation)")
+                    .fontWeight(.heavy)
+                    .font(.title2)
+                Text("death count: \(deathCount)")
+                    .fontWeight(.light)
+                    .font(.caption)
+                Text("birth count: \(birthCount)")
+                    .fontWeight(.light)
+                    .font(.caption)
+            }
+            .padding(.bottom, 10)
             HStack {
-                Button(action: {
-                    env.respawn(n: 3)
-                    deathCount = 0
-                    birthCount = 2
+                Button(action: { // Reset everything to none / empty
+                    deathCount.reset()
+                    birthCount.reset()
                     deathRate = 1
+                    env.food = []
+                    env.alive = []
                 }){
-                    Text("generate random cells")
-                        .fontWeight(.heavy)
-                        .font(.caption)
+                    Text("Reset")
+                        .fontWeight(.light)
+                        .font(.caption2)
                         .padding(8)
-                        .background(Color.green)
-                        .clipShape(Capsule())
+                        .overlay(RoundedRectangle(cornerRadius: 10).stroke())
                 }
                 .buttonStyle(PlainButtonStyle())
-                Button(action: {
+                
+                Button(action: { // generate food and scatter randomly around the environment
                     env.fetchFood(min: 30, max: 35)
                 }){
-                    Text("generate random food")
-                        .fontWeight(.heavy)
-                        .font(.caption)
+                    Text("generate food")
+                        .fontWeight(.light)
+                        .font(.caption2)
                         .padding(8)
-                        .background(Color.red)
-                        .clipShape(Capsule())
+                        .overlay(RoundedRectangle(cornerRadius: 10).stroke())
                 }
                 .buttonStyle(PlainButtonStyle())
+                .padding(.trailing, 100)
+                
+                Button(action: { // start simulation with a single cell
+                    env.gen(coordinates: randomPoint(bounds: env.bounds))
+                }){
+                    VStack(alignment: .trailing, spacing: 0) {
+                        Image(systemName: "plus.circle")
+                            .resizable()
+                            .frame(width: 20, height: 20)
+                            .padding(.trailing, 10)
+                        Text("generate species")
+                            .font(.caption2)
+                    }
+                }
+                .buttonStyle(PlainButtonStyle())
+                
             }
+            .padding(.bottom, 10)
             ZStack {
                 FoodView() // scatter food
                 ForEach(0..<env.alive.count, id: \.self) { n in //creates a view for each species env.alive currently
                     Cell(env.alive[n], style: .square)
                         .onReceive(timer) { _ in
-                            safeForIn(n, env.alive.count) { // make sure alive[n] is a valid index (sometimes n goes out of bounds while running due to glitchy behaviour with ForEach).
+                            withinLimit(n, env.alive.count) { // make sure alive[n] is a valid index (sometimes n goes out of bounds while running due to glitchy behaviour with ForEach).
                                 env.alive[n].updatePos()
                                 env.alive[n].onDeath { // when cell dies
                                     withAnimation(.easeInOut(duration: 0.4)) {
@@ -88,7 +108,8 @@ struct ContentView: View {
             }
             .frame(width: 350, height: 400)
             .background(EnvironmentView().frame(width: 350, height: 400))
-            birthCap($maxPopulationSize, "New births cap")
+            birthCap($maxPopulationSize, "new births cap")
+                .padding([.leading, .top], 10)
         }
     }
 }
@@ -121,10 +142,11 @@ struct birthCap: View {
         self._selection = val
     }
     var body: some View {
-        VStack(spacing: 2) {
+        VStack(alignment: .leading, spacing: 0) {
             Text(text)
                 .fontWeight(.light)
-                .font(.callout)
+                .font(.caption)
+                .padding(.leading, 3)
             Picker("Population size cap", selection: $selection){
                 Text("5").tag(5)
                 Text("10").tag(10)
@@ -133,6 +155,7 @@ struct birthCap: View {
             }
             .pickerStyle(SegmentedPickerStyle())
             .frame(width: 200)
+            .scaleEffect(CGSize(width: 0.75, height: 0.75), anchor: .bottomLeading)
         }
     }
 }

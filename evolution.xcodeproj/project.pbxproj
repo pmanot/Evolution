@@ -15,6 +15,8 @@
 		84154ABC252FB91C009B5806 /* evolutionUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84154ABB252FB91C009B5806 /* evolutionUITests.swift */; };
 		84154ACD252FB95B009B5806 /* CoreLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84154ACC252FB95B009B5806 /* CoreLogic.swift */; };
 		849245202539914C00C2394C /* FoodView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8492451F2539914C00C2394C /* FoodView.swift */; };
+		84924525253AC40100C2394C /* DayClock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84924524253AC40100C2394C /* DayClock.swift */; };
+		8492452A253B403200C2394C /* EnvironmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84924529253B403200C2394C /* EnvironmentView.swift */; };
 		84DC23422535B04800E04074 /* Cell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84DC23412535B04800E04074 /* Cell.swift */; };
 /* End PBXBuildFile section */
 
@@ -50,6 +52,8 @@
 		84154ABD252FB91C009B5806 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		84154ACC252FB95B009B5806 /* CoreLogic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreLogic.swift; sourceTree = "<group>"; };
 		8492451F2539914C00C2394C /* FoodView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodView.swift; sourceTree = "<group>"; };
+		84924524253AC40100C2394C /* DayClock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DayClock.swift; sourceTree = "<group>"; };
+		84924529253B403200C2394C /* EnvironmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnvironmentView.swift; sourceTree = "<group>"; };
 		84DC23412535B04800E04074 /* Cell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Cell.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -106,7 +110,9 @@
 				84154AA0252FB91B009B5806 /* ContentView.swift */,
 				84154AA2252FB91C009B5806 /* Assets.xcassets */,
 				84DC23412535B04800E04074 /* Cell.swift */,
+				84924524253AC40100C2394C /* DayClock.swift */,
 				8492451F2539914C00C2394C /* FoodView.swift */,
+				84924529253B403200C2394C /* EnvironmentView.swift */,
 				84154AA7252FB91C009B5806 /* Info.plist */,
 				84154AA4252FB91C009B5806 /* Preview Content */,
 			);
@@ -269,6 +275,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				84154AA1252FB91B009B5806 /* ContentView.swift in Sources */,
+				84924525253AC40100C2394C /* DayClock.swift in Sources */,
+				8492452A253B403200C2394C /* EnvironmentView.swift in Sources */,
 				849245202539914C00C2394C /* FoodView.swift in Sources */,
 				84DC23422535B04800E04074 /* Cell.swift in Sources */,
 				84154A9F252FB91B009B5806 /* evolutionApp.swift in Sources */,
