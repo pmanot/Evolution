@@ -11,10 +11,31 @@ import SwiftUI
 
 
 public final class Environment: ObservableObject {
-    var bounds = Bounds(left: 50, right: 360, up: 150, down: 660)
-    var food: [Food]
-    init(min: Int = 30, max: Int = 45) {
-        food = genFood(min: min, max: max)
+    @Published var bounds: Bounds
+    @Published var food: [Food]
+    @Published var alive: [Species] = []
+    init(min: Int = 30, max: Int = 45, _ bounds: Bounds = Bounds(left: 50, right: 360, up: 150, down: 660)) {
+        self.bounds = bounds
+        food = []
+    }
+    func fetchFood(min: Int, max: Int) {
+        food = []
+        for _ in 0..<Int.random(in: min..<max) {
+            food.append(Food(energy: Double.random(in: 0..<10), color: Bool.random() ? .green : .pink, position: randomPoint(bounds: bounds)))
+        }
+    }
+    func gen(coordinates: Point) {
+        alive.append(Species(name: "M", speed: Double.random(in: 0..<10), lifespan: Int.random(in: 100..<1000), sight: Double.random(in: 2..<5), coordinates: coordinates, bounds: bounds))
+    }
+    
+    func offspring(_ a: Species, b: Species) {
+        alive.append(Species(name: a.identifier + b.identifier, speed: (a.speed + b.speed)/2 , lifespan: (a.lifespan + b.lifespan)/2, sight: (a.sightRadius + b.sightRadius)/2, bounds: bounds))
+    }
+    
+    func respawn(n: Int) {
+        loop(n){
+            gen(coordinates: randomPoint(bounds: self.bounds))
+        }
     }
 }
 
@@ -71,6 +92,7 @@ struct Species: Identifiable, Hashable {
     let id = UUID()
     var identifier: String
     var color: Color
+    var foodEaten: Bool
     var speed: Double
     var lifespan: Int
     var disabled: Bool
@@ -87,6 +109,7 @@ struct Species: Identifiable, Hashable {
         self.coordinates = coordinates
         self.bounds = bounds
         self.sightRadius = sight
+        self.foodEaten = false
         switch speed {
         case 0..<2:
             color = .purple
@@ -100,8 +123,8 @@ struct Species: Identifiable, Hashable {
     
     mutating func updatePos(_ dC: Double = 1) { // updates the xy position of a cell (called at fixed intervals of time)
         if !disabled {
-            coordinates.x += sin(dir)*CGFloat(speed)/2 //increase the x position
-            coordinates.y += cos(dir)*CGFloat(speed)/2 //increase the y position
+            coordinates.x += sin(dir)*CGFloat(speed) //increase the x position
+            coordinates.y += cos(dir)*CGFloat(speed) //increase the y position
             updateDir() //update the direction
             lifespan += -1 // 1 step
             avoidBounds()
@@ -143,6 +166,7 @@ struct Species: Identifiable, Hashable {
     
     mutating func consume(_ food: Food) {
         self.lifespan += Int(food.energy*Double(1000))
+        self.foodEaten = true
     }
     
     mutating func eatFood(_ food: inout [Food], _ alive: [Species]) {
@@ -150,27 +174,13 @@ struct Species: Identifiable, Hashable {
             safeForIn(f, food.count) {
                 if self.coordinates.inRange(of: food[f].position, radius: 5) {
                     self.consume(food[f])
-                    food.remove(at: f)
+                    if f < food.count {
+                        food.remove(at: f)
+                    }
                 }
             }
         }
     }
-}
-
-func gen(coordinates: Point) -> Species {
-    Species(name: "M", speed: Double.random(in: 0..<10), lifespan: Int.random(in: 100..<1000), sight: Double.random(in: 2..<5), coordinates: coordinates)
-}
-
-
-func offspring(_ a: Species, b: Species) -> Species {
-    Species(name: a.identifier + b.identifier, speed: (a.speed + b.speed)/2 , lifespan: (a.lifespan + b.lifespan)/2, sight: (a.sightRadius + b.sightRadius)/2)
-}
-func genFood(min: Int, max: Int) -> [Food] {
-    var final: [Food] = []
-    for _ in 0..<Int.random(in: min..<max) {
-        final.append(Food(energy: Double.random(in: 0..<10), color: Bool.random() ? .green : .pink, position: randomPoint()))
-    }
-    return final
 }
 
 enum Energy: Int {
@@ -179,6 +189,9 @@ enum Energy: Int {
     case high = 8
 }
 
+func gen(coordinates: Point, _ bounds: Bounds) -> Species {
+    return Species(name: "M", speed: Double.random(in: 0..<10), lifespan: Int.random(in: 100..<1000), sight: Double.random(in: 2..<5), coordinates: coordinates, bounds: bounds)
+}
 
 func rate(_ x: Double, _ m: () -> ()) {
     if Int.random(in: 0..<10000) <= Int(x*10000) {
@@ -204,6 +217,12 @@ func randomPoint(bounds: Bounds = Bounds(left: 50, right: 360, up: 160, down: 66
 
 func safeForIn(_ n: Int, _ limit: Int, _ x: () -> ()){
     if n < limit {
+        x()
+    }
+}
+
+func loop(_ n: Int, _ x: () -> ()) {
+    for _ in 0..<n {
         x()
     }
 }
