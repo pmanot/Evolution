@@ -11,6 +11,6 @@ opacity, etc. can all be used as visual tools to help better grasp some very fun
 grasp how there traits slowly mutate and change in a collection of these "cells" and how the group or collection slowly "evloves" to only allow the survival of
 the most efficient cells based on the environmental constraints.
 
-I want thisInspired by channels such as 3blue1brown and Primer, I hope this proves as a useful and playfull tool to help understand the underlying complexities
+Inspired by channels such as 3blue1brown and Primer, I hope this proves as a useful and playfull tool to help understand the underlying complexities
 of group behaviour and changes while being able to visually express seemingly arbitrary numbers that can be played around with to help show people how beautiful
 relationship between the actions an individual and a group is when put in an environment with some form of constraints
