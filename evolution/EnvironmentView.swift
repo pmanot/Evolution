@@ -17,7 +17,7 @@ struct EnvironmentView: View {
                 FoodView()
             }
             .onAppear{
-                env.bounds = Bounds(left: 10, right: frame.size.width - 10, up: 10, down: frame.size.height - 10)
+                env.bounds = Bounds(left: 20, right: frame.size.width - 20, up: 20, down: frame.size.height - 20)
             }
         }
         

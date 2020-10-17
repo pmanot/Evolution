@@ -21,12 +21,21 @@ struct Cell: View {
         switch style {
         
         case .circle:
-            Circle()
-                .opacity(0.4)
-                .overlay(Circle().stroke(lineWidth: 2).foregroundColor(.black).opacity(0.8))
-                .frame(width: 20, height: 20)
-                .foregroundColor(color)
-                .position(some_species.coordinates.cg())
+            ZStack {
+                Circle()
+                    .opacity(0.4)
+                    .overlay(Circle().stroke(lineWidth: 2).foregroundColor(.black).opacity(0.8))
+                    .frame(width: 15, height: 15)
+                    .foregroundColor(color)
+                    .position(some_species.coordinates.cg())
+                if some_species.foodEaten { // if food eaten, display a small dot like indicator within view to show
+                    Circle()
+                        .opacity(0.4)
+                        .overlay(Rectangle().stroke(lineWidth: 2).foregroundColor(.black).opacity(0.8))
+                        .frame(width: 4, height: 4)
+                        .position(some_species.coordinates.cg())
+                }
+            }
         
         case .square:
             ZStack {
@@ -36,7 +45,7 @@ struct Cell: View {
                     .frame(width: 15, height: 15)
                     .foregroundColor(color)
                     .position(some_species.coordinates.cg())
-                if some_species.foodEaten {
+                if some_species.foodEaten { // if food eaten, display a small dot like indicator within view to show
                     Rectangle()
                         .opacity(0.4)
                         .overlay(Rectangle().stroke(lineWidth: 2).foregroundColor(.black).opacity(0.8))
@@ -49,7 +58,7 @@ struct Cell: View {
 }
 
 
-enum CellStyle {
+enum CellStyle { // two styles for visual representation of a species
     case circle, square
 }
 
