@@ -14,9 +14,10 @@ public final class Environment: ObservableObject { // the environment for all sp
     @Published var bounds: Bounds // boundaries of the environment
     @Published var food: [Food] // Array containing all available food
     @Published var alive: [Species] = [] // Array containing all currently alive species
-    init(min: Int = 30, max: Int = 45, _ bounds: Bounds = Bounds(left: 50, right: 360, up: 150, down: 600)) {
+    init(_ bounds: Bounds = Bounds(left: 50, right: 360, up: 150, down: 600)) {
         self.bounds = bounds
         food = []
+        fetchFood(min: 1, max: 2)
     }
     func fetchFood(min: Int, max: Int) { // injects food into the environment
         food = []
@@ -94,20 +95,22 @@ struct Species: Identifiable, Hashable {
     var foodEaten: Bool // whether it has consumed food or not
     var speed: Double
     var lifespan: Int
+    let maxLifespan: Int
     var disabled: Bool // to be toggled at death, stops all calculations and movement
     var coordinates: Point // position of self
     var bounds: Bounds // boundaries to stop self from going out of given frame
     // var infected: Bool = false // coming soon
     var dir = CGFloat.random(in: 0..<2*(.pi)) //direction in radians
     var sightRadius: Double
-    init(name: String, speed: Double, lifespan: Int, sight: Double, infected: Bool = false, coordinates: Point = Point(x: 200, y: 300), bounds: Bounds = Bounds(left: 50, right: 360, up: 160, down: 660)) {
+    init(name: String, speed: Double, lifespan: Int, sight: Double = 5, infected: Bool = false, coordinates: Point = Point(x: 200, y: 300), bounds: Bounds = Bounds(left: 50, right: 360, up: 160, down: 660)) {
         self.identifier = name
         self.speed = speed
         self.lifespan = lifespan
+        self.maxLifespan = lifespan
         // self.infected = infected
         self.coordinates = coordinates
         self.bounds = bounds
-        self.sightRadius = sight
+        self.sightRadius = sight*speed*0.25
         self.foodEaten = false
         switch speed {
         case 0..<2:
@@ -125,7 +128,7 @@ struct Species: Identifiable, Hashable {
             coordinates.x += sin(dir)*CGFloat(speed) //increase the x position
             coordinates.y += cos(dir)*CGFloat(speed) //increase the y position
             updateDir() //update the direction
-            lifespan += -1 // 1 step
+            lifespan -= 1 // 1 step
             avoidBounds()
         }
         disabled = lifespan == 0
@@ -164,7 +167,7 @@ struct Species: Identifiable, Hashable {
     }
     
     mutating func consume(_ food: Food) {
-        self.lifespan += Int(food.energy*Double(1000)) // energy gained from 'consuming' food increases lifespan
+        self.lifespan += Int(food.energy*Double(100)) // energy gained from 'consuming' food increases lifespan
         self.foodEaten = true
     }
     
@@ -196,18 +199,6 @@ func rate(_ x: Double, _ m: () -> ()) { // function that executes a closure base
     }
 }
 
-extension Point { // converts point to CGPoint
-    func cg() -> CGPoint {
-        CGPoint(x: self.x, y: self.y)
-    }
-}
-
-extension BinaryInteger {
-    mutating func reset() { // absolutely useless function
-        self = 0
-    }
-}
-
 func randomPoint(bounds: Bounds = Bounds(left: 50, right: 360, up: 160, down: 660)) -> Point { // picks a random point within the given constraints
     Point(x: CGFloat.random(in: bounds.left..<bounds.right), y: CGFloat.random(in: bounds.up..<bounds.down))
 }
@@ -221,5 +212,64 @@ func withinLimit(_ n: Int, _ limit: Int, _ x: () -> ()){ // used mainly for ensu
 func loop(_ n: Int, _ x: () -> ()) { // pretty self explanatory, executes a closure repeatedly for a given (n) number of times.
     for _ in 0..<n {
         x()
+    }
+}
+
+
+extension BinaryInteger {
+    func mappedValue(inputRange rS: Range<Self>, outputRange rF: Range<Self>) -> Double {
+        let cappedValue = self.capped(min: rS.lowerBound, max: rS.upperBound)
+        switch (rF.lowerBound, rS.lowerBound) {
+        case (0,0):
+            return (Double(rF.upperBound)/Double(rS.upperBound)) * Double(cappedValue)
+        default:
+            let delta = Double(rF.upperBound - rF.lowerBound)/Double(rS.upperBound - rS.lowerBound)
+            let c = Double(rF.lowerBound) - Double(rS.lowerBound)*delta
+            return (Double(cappedValue)*delta + c)
+        }
+    }
+    
+    func capped(min: Self, max: Self) -> Self {
+        if self > max {
+            return max
+        }
+        if self < min {
+            return min
+        }
+        return self
+    }
+    
+    mutating func reset() { // absolutely useless function
+        self = 0
+    }
+}
+
+extension Double {
+    func mappedValue(inputRange rS: Range<Self>, outputRange rF: Range<Self>) -> Double {
+        let cappedValue = self.capped(min: rS.lowerBound, max: rS.upperBound)
+        switch (rF.lowerBound, rS.lowerBound) {
+        case (0,0):
+            return rF.upperBound/rS.upperBound * cappedValue
+        default:
+            let delta = (rF.upperBound - rF.lowerBound)/(rS.upperBound - rS.lowerBound)
+            let c = rF.lowerBound - rS.lowerBound*delta
+            return (Double(cappedValue)*delta + c)
+        }
+    }
+    
+    func capped(min: Self, max: Self) -> Self {
+        if self > max {
+            return max
+        }
+        if self < min {
+            return min
+        }
+        return self
+    }
+}
+
+extension Point { // converts point to CGPoint
+    func cg() -> CGPoint {
+        CGPoint(x: self.x, y: self.y)
     }
 }
