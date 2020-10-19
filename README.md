@@ -1,6 +1,6 @@
 # evolution
 
-An attempt to allow people to run small scale simulations on their ios devices, to watch and observe different species in a neutral environment
+An attempt to allow people to run small scale simulations on any modern iOS device, to watch and observe different species in a neutral environment
 compete for food, and watch as the mix of species "evolves" by slowly leaning in favor of simple traits (speed, size, etc) that help them survive.
 I also hope to expand this into a epidemic simulator, by simulating small societies and giving people a more visual representation of how diseases spread
 alongside the raw data to help people really visualise chaos theory and how individual random behaviour, in a group can still lead to some prominent
