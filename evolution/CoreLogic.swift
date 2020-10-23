@@ -17,7 +17,6 @@ public final class Environment: ObservableObject { // the environment for all sp
     init(_ bounds: Bounds = Bounds(left: 50, right: 360, up: 150, down: 600)) {
         self.bounds = bounds
         food = []
-        fetchFood(min: 1, max: 2)
     }
     func fetchFood(min: Int, max: Int) { // injects food into the environment
         food = []
@@ -30,13 +29,17 @@ public final class Environment: ObservableObject { // the environment for all sp
     }
     
     func offspring(_ a: Species, b: Species) { // when two species love each other very very much...
-        alive.append(Species(name: a.identifier + b.identifier, speed: (a.speed + b.speed)/2 , lifespan: (a.lifespan + b.lifespan)/2, sight: (a.sightRadius + b.sightRadius)/2, bounds: bounds))
+        alive.append(Species(name: a.identifier + b.identifier, speed: (a.speed + b.speed)/2 , lifespan: (a.lifespan + b.lifespan)/2, sight: (a.sightRadius + b.sightRadius)/2, coordinates: midPoint(a.coordinates, b.coordinates), bounds: bounds))
     }
     
     func respawn(n: Int) { // generates n number of new species with random traits
         loop(n){
             gen(coordinates: randomPoint(bounds: self.bounds))
         }
+    }
+    func reset() {
+        alive = []
+        food = []
     }
 }
 
@@ -45,6 +48,18 @@ struct Bounds: Hashable { // used to define the boundaries of a frame
     var right: CGFloat
     var up: CGFloat
     var down: CGFloat
+    init(frame: CGSize, position: CGPoint) {
+        self.left = position.x - frame.width/2
+        self.right = position.x + frame.width/2
+        self.up = position.y - frame.height/2
+        self.down = position.y + frame.height/2
+    }
+    init(left: CGFloat, right: CGFloat, up: CGFloat, down: CGFloat) {
+        self.left = left
+        self.right = right
+        self.up = up
+        self.down = down
+    }
 }
 
 struct Food: Identifiable, Hashable {
@@ -87,6 +102,9 @@ struct Point: Hashable, Strideable { // Custom CGPoint struct that conforms to H
     }
 }
 
+func midPoint(_ a: Point, _ b: Point) -> Point {
+    Point(x: (a.x + b.x)/2, y: (a.y + b.y)/2)
+}
 
 struct Species: Identifiable, Hashable {
     let id = UUID()
@@ -123,7 +141,7 @@ struct Species: Identifiable, Hashable {
         self.disabled = false
     }
     
-    mutating func updatePos(_ dC: Double = 1) { // updates the xy position of a cell (called at fixed intervals of time)
+    mutating func updatePos() { // updates the xy position of a cell (called at fixed intervals of time)
         if !disabled {
             coordinates.x += sin(dir)*CGFloat(speed) //increase the x position
             coordinates.y += cos(dir)*CGFloat(speed) //increase the y position
@@ -134,7 +152,7 @@ struct Species: Identifiable, Hashable {
         disabled = lifespan == 0
     }
     
-    mutating func updateDir(_ rStart: CGFloat = -0.1, _ rEnd: CGFloat = 0.1) { // changes the direction of a cell slightly from its given direction
+    mutating func updateDir(_ rStart: CGFloat = -0.05, _ rEnd: CGFloat = 0.05) { // changes the direction of a cell slightly from its given direction
         dir += CGFloat.random(in: rStart..<rEnd)
         if dir > 2*(.pi) || dir < 0 { // make sure direction stays within the range of a full rotation (2pi)
             dir = CGFloat.random(in: 0..<2*(.pi))
@@ -272,4 +290,33 @@ extension Point { // converts point to CGPoint
     func cg() -> CGPoint {
         CGPoint(x: self.x, y: self.y)
     }
+}
+
+func color(_ r: Double, _ g: Double, _ b: Double) -> Color {
+    Color(red: r/255, green: g/255, blue: b/255)
+}
+
+
+
+extension Color {
+    static let primaryText = color(42, 47, 65)
+    static let secondaryText = color(54, 60, 82)
+    static let darkblueGray = color(65, 72, 99)
+    static let lightBlueGray = color(150, 157, 187)
+    static let backgroundGray = color(218, 220, 231)
+    static let blueGreen = color(124, 222, 220)
+    static let darkBlueGreen = color(35, 139, 137)
+    static let lightBlueGreen = color(178, 236, 235)
+    static let mediumPurple = color(147, 129, 255)
+    static let lavender = color(201, 191, 255)
+    static let darkBlue = color(91, 62, 255)
+    static let mildYellow = color(236, 221, 123)
+    static let lightYellow = color(241, 230, 159)
+    static let umber = color(104, 83, 77)
+    static let taupe = color(116, 92, 86)
+    static let lightSalmon = color(255, 166, 134)
+    static let orangeCrayola = color(255, 104, 50)
+    static let silk = color(255, 212, 197)
+    static let coralPink = color(255, 135, 144)
+    static let background = color(247, 253, 253)
 }
