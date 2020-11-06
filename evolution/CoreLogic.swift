@@ -9,11 +9,29 @@ import Foundation
 import SwiftUI
 
 
+/*
+ RULES
+ 
+ #Time conversions:
+ 1 day in simulation = 10 sec in real life
+ 
+ #Survival Logic:
+ In order to survive, a cell must have eaten at least one food pellet a day
+ 
+ #Reproduction Logic:
+ If a cell has eaten at least two energy pellets, it is able to reproduce
+ 
+ #Food Logic:
+ 1 pellet gives you a small speed boost and a small lifespan boost
+ 
+ 
+*/
 
-public final class Environment: ObservableObject { // the environment for all species (defines borders that a species cannot cross, contains food, etc)
+public final class SpeciesEnvironment: ObservableObject { // the environment for all species (defines borders that a species cannot cross, contains food, etc)
     @Published var bounds: Bounds // boundaries of the environment
     @Published var food: [Food] // Array containing all available food
     @Published var alive: [Species] = [] // Array containing all currently alive species
+    @Published var birthCapVal: Int = 50
     init(_ bounds: Bounds = Bounds(left: 50, right: 360, up: 150, down: 600)) {
         self.bounds = bounds
         food = []
@@ -29,7 +47,7 @@ public final class Environment: ObservableObject { // the environment for all sp
     }
     
     func offspring(_ a: Species, b: Species) { // when two species love each other very very much...
-        alive.append(Species(name: a.identifier + b.identifier, speed: (a.speed + b.speed)/2 , lifespan: (a.lifespan + b.lifespan)/2, sight: (a.sightRadius + b.sightRadius)/2, coordinates: midPoint(a.coordinates, b.coordinates), bounds: bounds))
+        alive.append(Species(name: a.identifier + b.identifier, speed: (a.speed + b.speed)/2 , lifespan: (a.maxLifespan + b.maxLifespan)/2, sight: (a.sightRadius + b.sightRadius)/2, coordinates: midPoint(a.coordinates, b.coordinates), bounds: bounds))
     }
     
     func respawn(n: Int) { // generates n number of new species with random traits
@@ -40,6 +58,13 @@ public final class Environment: ObservableObject { // the environment for all sp
     func reset() {
         alive = []
         food = []
+    }
+    
+    func makeFood(d: Species) {
+        if let ind = alive.firstIndex(of: d) {
+            food.append(Food(energy: Double(d.maxLifespan)/1000, color: .green, position: d.coordinates))
+            alive.remove(at: ind)
+        }
     }
 }
 
@@ -110,9 +135,10 @@ struct Species: Identifiable, Hashable {
     let id = UUID()
     var identifier: String
     var color: Color
-    var foodEaten: Bool // whether it has consumed food or not
+    var foodEnergy: [Food]
     var speed: Double
     var lifespan: Int
+    var movementCounter: Int
     let maxLifespan: Int
     var disabled: Bool // to be toggled at death, stops all calculations and movement
     var coordinates: Point // position of self
@@ -129,7 +155,7 @@ struct Species: Identifiable, Hashable {
         self.coordinates = coordinates
         self.bounds = bounds
         self.sightRadius = sight*speed*0.25
-        self.foodEaten = false
+        self.foodEnergy = []
         switch speed {
         case 0..<2:
             color = .purple
@@ -139,15 +165,25 @@ struct Species: Identifiable, Hashable {
             color = .blue
         }
         self.disabled = false
+        self.movementCounter = Int(20 - speed*2)
     }
     
     mutating func updatePos() { // updates the xy position of a cell (called at fixed intervals of time)
         if !disabled {
-            coordinates.x += sin(dir)*CGFloat(speed) //increase the x position
-            coordinates.y += cos(dir)*CGFloat(speed) //increase the y position
+            if movementCounter <= 0 {
+                movementCounter = Int(10 - speed)
+            }
+            if movementCounter == Int(10 - speed) {
+                coordinates.x += sin(dir)*5 //increase the x position
+                coordinates.y += cos(dir)*5 //increase the y position
+            }
+            movementCounter -= 1
             updateDir() //update the direction
             lifespan -= 1 // 1 step
             avoidBounds()
+            if foodEnergy.count >= 1 {
+                lifespan = maxLifespan
+            }
         }
         disabled = lifespan == 0
     }
@@ -184,16 +220,11 @@ struct Species: Identifiable, Hashable {
         }
     }
     
-    mutating func consume(_ food: Food) {
-        self.lifespan += Int(food.energy*Double(100)) // energy gained from 'consuming' food increases lifespan
-        self.foodEaten = true
-    }
-    
     mutating func eatFood(_ food: inout [Food], _ alive: [Species]) {
         for f in 0..<food.count {
             withinLimit(f, food.count) { // make sure f is a valid index
                 if self.coordinates.inRange(of: food[f].position, radius: 5) {
-                    self.consume(food[f])
+                    self.foodEnergy.append(food[f])
                     food.remove(at: f)
                 }
             }
@@ -236,7 +267,7 @@ func loop(_ n: Int, _ x: () -> ()) { // pretty self explanatory, executes a clos
 
 extension BinaryInteger {
     func mappedValue(inputRange rS: Range<Self>, outputRange rF: Range<Self>) -> Double {
-        let cappedValue = self.capped(min: rS.lowerBound, max: rS.upperBound)
+        let cappedValue = self.capped(rS.lowerBound..<rS.upperBound)
         switch (rF.lowerBound, rS.lowerBound) {
         case (0,0):
             return (Double(rF.upperBound)/Double(rS.upperBound)) * Double(cappedValue)
@@ -247,12 +278,12 @@ extension BinaryInteger {
         }
     }
     
-    func capped(min: Self, max: Self) -> Self {
-        if self > max {
-            return max
+    func capped(_ r: Range<Self>) -> Self {
+        if self > r.upperBound {
+            return r.upperBound
         }
-        if self < min {
-            return min
+        if self < r.lowerBound {
+            return r.lowerBound
         }
         return self
     }
@@ -264,7 +295,7 @@ extension BinaryInteger {
 
 extension Double {
     func mappedValue(inputRange rS: Range<Self>, outputRange rF: Range<Self>) -> Double {
-        let cappedValue = self.capped(min: rS.lowerBound, max: rS.upperBound)
+        let cappedValue = self.capped(rS.lowerBound..<rS.upperBound)
         switch (rF.lowerBound, rS.lowerBound) {
         case (0,0):
             return rF.upperBound/rS.upperBound * cappedValue
@@ -275,12 +306,12 @@ extension Double {
         }
     }
     
-    func capped(min: Self, max: Self) -> Self {
-        if self > max {
-            return max
+    func capped(_ r: Range<Self>) -> Self {
+        if self > r.upperBound {
+            return r.upperBound
         }
-        if self < min {
-            return min
+        if self < r.lowerBound {
+            return r.lowerBound
         }
         return self
     }
@@ -296,6 +327,16 @@ func color(_ r: Double, _ g: Double, _ b: Double) -> Color {
     Color(red: r/255, green: g/255, blue: b/255)
 }
 
+func counter(_ initialCount: Int) -> (() -> Void) -> () {
+    var i = initialCount
+    func countDown(_ x: () -> Void) -> () {
+        i -= 1
+        if i <= 0 {
+            x()
+        }
+    }
+    return countDown
+}
 
 
 extension Color {
@@ -303,7 +344,7 @@ extension Color {
     static let secondaryText = color(54, 60, 82)
     static let darkblueGray = color(65, 72, 99)
     static let lightBlueGray = color(150, 157, 187)
-    static let backgroundGray = color(218, 220, 231)
+    static let lightGray = color(218, 220, 231)
     static let blueGreen = color(124, 222, 220)
     static let darkBlueGreen = color(35, 139, 137)
     static let lightBlueGreen = color(178, 236, 235)
@@ -319,4 +360,6 @@ extension Color {
     static let silk = color(255, 212, 197)
     static let coralPink = color(255, 135, 144)
     static let background = color(247, 253, 253)
+    static let darkJungleGreen = color(21, 86, 86)
+    static let lightTurquoise = color(162, 233, 233)
 }
