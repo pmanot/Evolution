@@ -34,6 +34,7 @@ struct MainUI: View {
                         .aspectRatio(contentMode: .fill)
                         .clipShape(Rectangle())
                         .frame(width: geo.size.width, height: geo.size.height)
+                        .ignoresSafeArea(.all)
                 }
                 else {
                     Image("dot-matrix")
@@ -41,16 +42,20 @@ struct MainUI: View {
                         .aspectRatio(contentMode: .fill)
                         .clipShape(Rectangle())
                         .frame(width: geo.size.width, height: geo.size.height)
+                        .ignoresSafeArea(.all)
                         .colorInvert()
+                        .overlay(Color.darkBlueGreen.opacity(0.1))
+                        .ignoresSafeArea(.all)
                 }
                 
+                /*
                 MultiLineChartView(data: [(populationArray, GradientColors.bluPurpl), (deathArray, GradientColors.prplPink), (birthArray, GradientColors.green)], title: "Population data", form: ChartForm.wide)
                     .overlay(Color.blueGreen.opacity(0.1))
                     .clipShape(RoundedRectangle(cornerRadius: 20))
                     .overlay(RoundedRectangle(cornerRadius: 20).strokeBorder(Color.lightBlueGreen, lineWidth: 2))
                     .scaleEffect(CGSize(width: 0.6, height: 0.6), anchor: .center)
                     .position(x: geo.size.width - 130, y: 65)
-                    .animation(.easeInOut(duration: 0.50))
+                */
                 
                 Button(action: {
                     settingsShowing.toggle()
@@ -77,6 +82,7 @@ struct MainUI: View {
                     Button(action: {
                         env.alive = []
                         env.food = []
+                        currentPopulation = 0; birthCount = 0; deathCount = 0
                     }){
                         Text("reset")
                             .font(.caption2)
@@ -132,13 +138,12 @@ struct MainUI: View {
                 .position(x: geo.size.width - 320, y: (geo.size.height - geo.size.width/2) - 200)
                 
                 ZStack {
-                    Color.lightTurquoise
+                    Color.coralPink
                         .clipShape(RoundedRectangle(cornerRadius: 8))
-                        .overlay(RoundedRectangle(cornerRadius: 9).stroke(Color.lightBlueGreen, lineWidth: 2))
-                        .overlay(RoundedRectangle(cornerRadius: 9).stroke(Color.darkJungleGreen, lineWidth: 0.25))
+                        .overlay(RoundedRectangle(cornerRadius: 9).stroke(Color.pink, lineWidth: 2))
                         .frame(width: geo.size.width - 10, height: geo.size.width - 10, alignment: .center)
                         .position(x: geo.size.width/2, y: geo.size.height - 188)
-                        .opacity(0.75)
+                        .opacity(0.7)
                     
                     ForEach(env.alive, id: \.id) { s in
                         Cell(s)
@@ -183,18 +188,6 @@ struct MainUI: View {
                         deathAnimationloop = counter(50)
                     }
                 }
-                populationArray.append(Double(currentPopulation + birthCount))
-                deathArray.append(Double(deathCount))
-                birthArray.append(Double(birthCount))
-                while populationArray.count >= 100 {
-                    populationArray.remove(atOffsets: allEven(populationArray.count/4))
-                }
-                while deathArray.count >= 200 {
-                    deathArray.remove(atOffsets: allEven(deathArray.count/4))
-                }
-                while birthArray.count >= 200 {
-                    birthArray.remove(atOffsets: allEven(birthArray.count/4))
-                }
                 timerLoop = counter(delayCount)
             }
         }
@@ -219,9 +212,6 @@ extension ChartForm {
 func allEven(_ x: Int) -> IndexSet {
     var evenNumbers: [Int] = []
     var c = x
-    if c % 2 != 0 {
-        c -= 1
-    }
     while c != 0 {
         c -= 2
         evenNumbers.append(c)
