@@ -8,16 +8,11 @@
 import SwiftUI
 
 struct FoodView: View {
-    @EnvironmentObject var env: Environment
+    @EnvironmentObject var env: SpeciesEnvironment
     var body: some View {
         ZStack {
-            ForEach(env.food, id: \.id) { n in
-                Rectangle()
-                    .frame(width: 5, height: 5)
-                    .foregroundColor(n.color)
-                    .opacity(0.9)
-                    .position(n.position.cg())
-                    .animation(.easeIn)
+            ForEach(env.food, id: \.id) { food in
+                SingleFoodMolecule(food)
             }
         }
     }
@@ -26,6 +21,24 @@ struct FoodView: View {
 struct FoodView_Previews: PreviewProvider {
     static var previews: some View {
         FoodView()
-            .environmentObject(Environment())
+            .environmentObject(SpeciesEnvironment())
+    }
+}
+
+
+struct SingleFoodMolecule: View {
+    var food: Food
+    init(_ food: Food) {
+        self.food = food
+    }
+    var body: some View {
+        ZStack {
+            Rectangle()
+                .frame(width: 5, height: 5)
+                .foregroundColor(food.color)
+                .opacity(0.9)
+                .position(food.position.cg())
+                .animation(.easeIn)
+        }
     }
 }
