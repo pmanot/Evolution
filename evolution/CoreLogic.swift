@@ -43,11 +43,11 @@ public final class SpeciesEnvironment: ObservableObject { // the environment for
         }
     }
     func gen(coordinates: Point) { // generates a species with random traits
-        alive.append(Species(name: "M", speed: Double.random(in: 0..<10), lifespan: Int.random(in: 100..<1000), sight: Double.random(in: 2..<5), coordinates: coordinates, bounds: bounds))
+        alive.append(Species(name: "M", speed: Int.random(in: 0..<10), lifespan: Int.random(in: 100..<1000), sight: Double.random(in: 2..<5), coordinates: coordinates, bounds: bounds))
     }
     
     func offspring(_ a: Species, b: Species) { // when two species love each other very very much...
-        alive.append(Species(name: a.identifier + b.identifier, speed: (a.speed + b.speed)/2 , lifespan: (a.maxLifespan + b.maxLifespan)/2, sight: (a.sightRadius + b.sightRadius)/2, coordinates: midPoint(a.coordinates, b.coordinates), bounds: bounds))
+        alive.append(Species(name: a.identifier + b.identifier, speed: (a.speed + b.speed)/2 , lifespan: Int((a.maxLifespan + b.maxLifespan)/2), sight: (a.sightRadius + b.sightRadius)/2, coordinates: midPoint(a.coordinates, b.coordinates), bounds: bounds))
     }
     
     func respawn(n: Int) { // generates n number of new species with random traits
@@ -66,6 +66,10 @@ public final class SpeciesEnvironment: ObservableObject { // the environment for
             alive.remove(at: ind)
         }
     }
+}
+
+func gen(_ name: String = "M", coordinates: Point = randomPoint(bounds: SpeciesEnvironment().bounds)) -> Species { // generates a species with random traits
+    Species(name: name, speed: Int(Double.random(in: 0..<10)), lifespan: Int.random(in: 100..<1000), sight: Double.random(in: 2..<5), coordinates: coordinates, bounds: SpeciesEnvironment().bounds)
 }
 
 struct Bounds: Hashable { // used to define the boundaries of a frame
@@ -136,25 +140,29 @@ struct Species: Identifiable, Hashable {
     var identifier: String
     var color: Color
     var foodEnergy: [Food]
-    var speed: Double
-    var lifespan: Int
+    var speed: Int // scale of 1 - 10
+    var size: Int = 1 // scale of 1 - 5
+    var cost: Double {
+        Double(speed*size).mappedValue(inputRange: 1..<50, outputRange: 1..<2)
+    }
+    var lifespan: Double
     var movementCounter: Int
-    let maxLifespan: Int
+    let maxLifespan: Double
     var disabled: Bool // to be toggled at death, stops all calculations and movement
     var coordinates: Point // position of self
     var bounds: Bounds // boundaries to stop self from going out of given frame
     // var infected: Bool = false // coming soon
     var dir = CGFloat.random(in: 0..<2*(.pi)) //direction in radians
     var sightRadius: Double
-    init(name: String, speed: Double, lifespan: Int, sight: Double = 5, infected: Bool = false, coordinates: Point = Point(x: 200, y: 300), bounds: Bounds = Bounds(left: 50, right: 360, up: 160, down: 660)) {
+    init(name: String, speed: Int, lifespan: Int, sight: Double = 5, infected: Bool = false, coordinates: Point = Point(x: 200, y: 300), bounds: Bounds = Bounds(left: 50, right: 360, up: 160, down: 660)) {
         self.identifier = name
         self.speed = speed
-        self.lifespan = lifespan
-        self.maxLifespan = lifespan
+        self.lifespan = Double(lifespan)
+        self.maxLifespan = Double(lifespan)
         // self.infected = infected
         self.coordinates = coordinates
         self.bounds = bounds
-        self.sightRadius = sight*speed*0.25
+        self.sightRadius = sight
         self.foodEnergy = []
         switch speed {
         case 0..<2:
@@ -165,8 +173,9 @@ struct Species: Identifiable, Hashable {
             color = .blue
         }
         self.disabled = false
-        self.movementCounter = Int(20 - speed*2)
+        self.movementCounter = Int(10 - speed)
     }
+    
     
     mutating func updatePos() { // updates the xy position of a cell (called at fixed intervals of time)
         if !disabled {
@@ -176,16 +185,16 @@ struct Species: Identifiable, Hashable {
             if movementCounter == Int(10 - speed) {
                 coordinates.x += sin(dir)*5 //increase the x position
                 coordinates.y += cos(dir)*5 //increase the y position
+                updateDir() //update the direction
+                lifespan -= cost // 1 step
+                avoidBounds()
             }
             movementCounter -= 1
-            updateDir() //update the direction
-            lifespan -= 1 // 1 step
-            avoidBounds()
             if foodEnergy.count >= 1 {
                 lifespan = maxLifespan
             }
         }
-        disabled = lifespan == 0
+        disabled = lifespan <= 0
     }
     
     mutating func updateDir(_ rStart: CGFloat = -0.05, _ rEnd: CGFloat = 0.05) { // changes the direction of a cell slightly from its given direction
@@ -239,7 +248,7 @@ enum Energy: Int {
 }
 
 func gen(coordinates: Point, _ bounds: Bounds) -> Species {
-    return Species(name: "M", speed: Double.random(in: 0..<10), lifespan: Int.random(in: 100..<1000), sight: Double.random(in: 2..<5), coordinates: coordinates, bounds: bounds)
+    return Species(name: "M", speed: Int.random(in: 0..<10), lifespan: Int.random(in: 100..<1000), sight: Double.random(in: 2..<5), coordinates: coordinates, bounds: bounds)
 }
 
 func rate(_ x: Double, _ m: () -> ()) { // function that executes a closure based on a given chance
@@ -304,6 +313,7 @@ extension Double {
             let c = rF.lowerBound - rS.lowerBound*delta
             return (Double(cappedValue)*delta + c)
         }
+        
     }
     
     func capped(_ r: Range<Self>) -> Self {
