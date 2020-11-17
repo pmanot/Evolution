@@ -9,22 +9,23 @@ import SwiftUI
 import SwiftUICharts
 
 struct MainUI: View {
-    @State var settingsShowing: Bool = false
+    @State var createSpeciesView: Bool = false
     @State var birthCount: Int = 0
     @State var deathCount: Int = 0
     @State private var deathArray: [Double] = []
-    @State private var populationArray: [Double] = []
+    @State private var populationArrayA: [Double] = []
+    @State private var populationArrayB: [Double] = []
     @State private var birthArray: [Double] = []
-    @State var currentPopulation = 0
     @State var maxPopulationSize = 20
-    @State var deathAnimationloop = counter(50)
-    @State var timerLoop = counter(10)
+    @State private var deathAnimationloop = counter(50)
+    @State private var timerLoop = counter(10)
+    @State private var foodLoop = counter(1000)
+    @State private var updatePopulationLoop = counter(100)
     @State var delayCount: Int = 10
-    @State private var updateLoop = counter(10)
-    @State private var speed: Double = 1
     @EnvironmentObject var env: SpeciesEnvironment
     @Environment(\.colorScheme) var colorScheme
-    let timer = Timer.publish(every: 0.01, on: .main, in: .default).autoconnect()
+    let timer = Timer.publish(every: 0.01, on: .main, in: .common).autoconnect()
+    let dayTimer = Timer.publish(every: 2, on: .main, in: .common).autoconnect()
     var body: some View {
         GeometryReader { geo in
             ZStack {
