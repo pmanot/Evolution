@@ -9,16 +9,11 @@ import SwiftUI
 
 struct UIElements: View {
     var body: some View {
-        GeometryReader { screen in
-            ZStack {
-                VStack {
-                    Button(action:{}){
-                        Text("someText")
-                            .frame(alignment: .leading)
-                    }
-                }
-                .frame(width: screen.size.width, height: screen.size.height)
+        VStack {
+            Button(action: {}) {
+                
             }
+            .buttonStyle(FunctionalButton())
         }
     }
 }
@@ -38,8 +33,30 @@ struct FunctionalButton: ButtonStyle {
         configuration.label
             .padding(8)
             .overlay(RoundedRectangle(cornerRadius: cornerRadius).stroke(lineWidth: 0.5).foregroundColor(.lightBlueGray))
-            .background((configuration.isPressed ? Color.lightBlueGreen : Color.blueGreen) .clipShape(RoundedRectangle(cornerRadius: cornerRadius)))
-            .animation(.easeOut(duration: 0.3))
-            .opacity(configuration.isPressed ? 0.8 : 1 )
+            .background(
+                Color.lavender
+                    .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+            )
+            .opacity(configuration.isPressed ? 0.8 : 1)
+            .animation(.easeOut(duration: 0.2))
+    }
+}
+
+
+struct Bright: ViewModifier {
+    var amount: Double
+    init(_ amount: Double = 0.3) {
+        self.amount = amount
+    }
+    func body(content: Content) -> some View {
+        content
+            .brightness(amount)
+            .opacity(1 - amount)
+    }
+}
+
+extension AnyTransition {
+    static var bright: AnyTransition {
+        .modifier(active: Bright(0.6), identity: Bright(0))
     }
 }
