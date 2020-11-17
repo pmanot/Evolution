@@ -9,39 +9,32 @@ import SwiftUI
 
 struct Cell: View {
     var some_species: Species
-    var style: CellStyle = .circle
     @EnvironmentObject var env: SpeciesEnvironment
-    init(_ species: Species, style: CellStyle = .circle) {
+    @Environment(\.colorScheme) var colorScheme
+    var size: CGSize
+    init(_ species: Species, size: CGSize = CGSize(width: 25, height: 25)) {
         some_species = species
-        self.style = style
+        self.size = size
     }
     var body: some View {
-        switch style {
-        
-        case .circle:
-            ZStack {
-                Circle()
-                    .strokeBorder(Color.darkJungleGreen)
-                    .frame(width: 25, height: 25)
-                    .foregroundColor(.blueGreen)
-                Circle()
-                    .strokeBorder(Color.blueGreen, lineWidth: 6, antialiased: true)
-                    .overlay(Arc(startAngle: .degrees(0), endAngle: angle(some_species.lifespan, max: some_species.maxLifespan), clockwise: true).stroke(lineWidth: 2).frame(width: 25, height: 25).foregroundColor(.black))
-                    .overlay(some_species.foodEnergy.count >= 1 ? Color.green.opacity(0.2) : Color.lightBlueGray.opacity(0.2)).clipShape(Circle())
-                    .frame(width: 25, height: 25)
-                Circle()
-                    .foregroundColor(.darkJungleGreen)
-                    .frame(width: 2, height: 2)
-            }
-            .overlay(Color.red.opacity(some_species.disabled ? 0.6 : 0).clipShape(Circle()))
-            .position(some_species.coordinates.cg())
-            .animation(.easeInOut(duration: 0.5))
-        
-        case .square:
-            ZStack {
-                // in progress
-            }
+        ZStack {
+            Circle()
+                .strokeBorder(Color.darkJungleGreen)
+                .frame(width: some_species.foodEnergy.count >= 1 ? size.width*1.2 : size.width, height: some_species.foodEnergy.count >= 1 ? size.width*1.2 : size.width)
+                .foregroundColor(.blueGreen)
+            Circle()
+                .strokeBorder(colorScheme == .dark ? Color.accentColor : Color.lightTurquoise, lineWidth: 6, antialiased: true)
+                .overlay(Arc(startAngle: .degrees(0), endAngle: angle(Int(some_species.lifespan), max: Int(some_species.maxLifespan)), clockwise: true).stroke(lineWidth: 3).frame(width: some_species.foodEnergy.count >= 1 ? size.width*1.2 : size.width, height: some_species.foodEnergy.count >= 1 ? size.width*1.2 : size.width).foregroundColor(.black))
+                .overlay(some_species.foodEnergy.count >= 1 ? Color.green.opacity(0.2) : Color.lightBlueGray.opacity(0.2)).clipShape(Circle())
+                .frame(width: some_species.foodEnergy.count >= 1 ? size.width*1.2 : size.width, height: some_species.foodEnergy.count >= 1 ? size.width*1.2 : size.width)
+            Circle()
+                .foregroundColor(colorScheme == .light ? Color.darkJungleGreen : Color.accentColor)
+                .frame(width: 2, height: 2)
         }
+        .overlay(some_species.color.opacity(0.5)
+        .clipShape(Circle()).frame(width: 26))
+        .position(some_species.coordinates.cg())
+        .animation(.easeInOut(duration: 0.5))
     }
 }
 
@@ -77,5 +70,7 @@ struct Arc: Shape {
         return path
     }
 }
+
+
 
 
