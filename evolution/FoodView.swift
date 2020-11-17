@@ -13,7 +13,9 @@ struct FoodView: View {
         ZStack {
             ForEach(env.food, id: \.id) { food in
                 SingleFoodMolecule(food)
+                    .environmentObject(env)
             }
+            .animation(.easeIn(duration: 0.3))
         }
     }
 }
@@ -38,7 +40,6 @@ struct SingleFoodMolecule: View {
                 .foregroundColor(food.color)
                 .opacity(0.9)
                 .position(food.position.cg())
-                .animation(.easeIn)
         }
     }
 }

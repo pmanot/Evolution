@@ -10,10 +10,9 @@ import SwiftUI
 struct EnvironmentView: View {
     @EnvironmentObject var env: SpeciesEnvironment
     var body: some View {
-        GeometryReader { frame in
-            ZStack {
-                FoodView()
-            }
+        ZStack {
+            FoodView()
+                .environmentObject(env)
         }
     }
 }

@@ -8,12 +8,12 @@
 
 /* Begin PBXBuildFile section */
 		84154A9F252FB91B009B5806 /* evolutionApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84154A9E252FB91B009B5806 /* evolutionApp.swift */; };
-		84154AA1252FB91B009B5806 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84154AA0252FB91B009B5806 /* ContentView.swift */; };
 		84154AA3252FB91C009B5806 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 84154AA2252FB91C009B5806 /* Assets.xcassets */; };
 		84154AA6252FB91C009B5806 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 84154AA5252FB91C009B5806 /* Preview Assets.xcassets */; };
 		84154AB1252FB91C009B5806 /* evolutionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84154AB0252FB91C009B5806 /* evolutionTests.swift */; };
 		84154ABC252FB91C009B5806 /* evolutionUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84154ABB252FB91C009B5806 /* evolutionUITests.swift */; };
 		84154ACD252FB95B009B5806 /* CoreLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84154ACC252FB95B009B5806 /* CoreLogic.swift */; };
+		84292D9A255D4B4100EE8CA1 /* CreateSpecies.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84292D99255D4B4100EE8CA1 /* CreateSpecies.swift */; };
 		8448950A253EA70400BC8153 /* MainUI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84489509253EA70400BC8153 /* MainUI.swift */; };
 		8448950F253EB01200BC8153 /* UIElements.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8448950E253EB01200BC8153 /* UIElements.swift */; };
 		84606C8D2548090600C62E1A /* SettingsUI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84606C8C2548090600C62E1A /* SettingsUI.swift */; };
@@ -44,7 +44,6 @@
 /* Begin PBXFileReference section */
 		84154A9B252FB91B009B5806 /* evolution.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = evolution.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		84154A9E252FB91B009B5806 /* evolutionApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = evolutionApp.swift; sourceTree = "<group>"; };
-		84154AA0252FB91B009B5806 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		84154AA2252FB91C009B5806 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		84154AA5252FB91C009B5806 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		84154AA7252FB91C009B5806 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -55,6 +54,7 @@
 		84154ABB252FB91C009B5806 /* evolutionUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = evolutionUITests.swift; sourceTree = "<group>"; };
 		84154ABD252FB91C009B5806 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		84154ACC252FB95B009B5806 /* CoreLogic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreLogic.swift; sourceTree = "<group>"; };
+		84292D99255D4B4100EE8CA1 /* CreateSpecies.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateSpecies.swift; sourceTree = "<group>"; };
 		84489509253EA70400BC8153 /* MainUI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainUI.swift; sourceTree = "<group>"; };
 		8448950E253EB01200BC8153 /* UIElements.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIElements.swift; sourceTree = "<group>"; };
 		84606C8C2548090600C62E1A /* SettingsUI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsUI.swift; sourceTree = "<group>"; };
@@ -115,10 +115,10 @@
 			children = (
 				84154A9E252FB91B009B5806 /* evolutionApp.swift */,
 				84154ACC252FB95B009B5806 /* CoreLogic.swift */,
-				84154AA0252FB91B009B5806 /* ContentView.swift */,
 				84924529253B403200C2394C /* EnvironmentView.swift */,
 				84DC23412535B04800E04074 /* Cell.swift */,
 				84489509253EA70400BC8153 /* MainUI.swift */,
+				84292D99255D4B4100EE8CA1 /* CreateSpecies.swift */,
 				8448950E253EB01200BC8153 /* UIElements.swift */,
 				84924524253AC40100C2394C /* DayClock.swift */,
 				84606C8C2548090600C62E1A /* SettingsUI.swift */,
@@ -291,9 +291,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				84154AA1252FB91B009B5806 /* ContentView.swift in Sources */,
 				84924525253AC40100C2394C /* DayClock.swift in Sources */,
 				8448950A253EA70400BC8153 /* MainUI.swift in Sources */,
+				84292D9A255D4B4100EE8CA1 /* CreateSpecies.swift in Sources */,
 				8492452A253B403200C2394C /* EnvironmentView.swift in Sources */,
 				849245202539914C00C2394C /* FoodView.swift in Sources */,
 				84DC23422535B04800E04074 /* Cell.swift in Sources */,
