@@ -23,3 +23,34 @@ struct EnvironmentView_Previews: PreviewProvider {
             .environmentObject(SpeciesEnvironment())
     }
 }
+
+struct FoodView: View {
+    @EnvironmentObject var env: SpeciesEnvironment
+    var body: some View {
+        ZStack {
+            ForEach(env.food, id: \.id) { food in
+                SingleFoodMolecule(food)
+                    .environmentObject(env)
+            }
+            .animation(.easeIn(duration: 0.3))
+        }
+    }
+}
+
+struct SingleFoodMolecule: View {
+    var food: Food
+    init(_ food: Food) {
+        self.food = food
+    }
+    var body: some View {
+        ZStack {
+            Circle()
+                .frame(width: 5, height: 5)
+                .foregroundColor(food.color)
+            Circle()
+                .strokeBorder(Color.darkblueGray)
+                .frame(width: 6, height: 6)
+        }
+        .position(food.position.cg())
+    }
+}
