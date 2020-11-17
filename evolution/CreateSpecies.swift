@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct CreateSpecies: View {
-    @State var species = [Species(name: "A", speed: 5, lifespan: 200, sight: 4, infected: false, coordinates: randomPoint(), bounds: <#T##Bounds#>, color: <#T##Color#>) , Species(name: <#T##String#>, speed: <#T##Int#>, lifespan: <#T##Int#>, sight: <#T##CGFloat#>, infected: <#T##Bool#>, coordinates: <#T##Point#>, bounds: <#T##Bounds#>, color: <#T##Color#>)]
+    @State var speciesDNA = [SpeciesDNA("A", speed: 5, sight: 4, size: 1, color: Color.blue), SpeciesDNA("B", speed: 6, sight: 6, size: 1, color: Color.red)]
     @State private var selection: Int = 0
     @State private var n: Int = 5
     @EnvironmentObject var env: SpeciesEnvironment
@@ -16,7 +16,7 @@ struct CreateSpecies: View {
     @Environment(\.colorScheme) var colorScheme
     var body: some View {
         ZStack {
-            species[selection].color.brightness(0.2)
+            speciesDNA[selection].color.brightness(0.2)
             VStack {
                 Text("Base Species")
                     .fontWeight(.heavy)
@@ -36,7 +36,7 @@ struct CreateSpecies: View {
                     .font(.callout)
                 Picker("", selection: $selection) {
                     ForEach(0..<2) { n in
-                        Text(species[n].identifier).tag(n)
+                        Text(speciesDNA[n].identifier).tag(n)
                     }
                 }
                 .pickerStyle(SegmentedPickerStyle())
@@ -49,13 +49,13 @@ struct CreateSpecies: View {
                         Capsule()
                             .strokeBorder(Color.darkblueGray, lineWidth: 1)
                             .frame(width: 180, height: 35)
-                        TextField("Species Identifier...", text: $species[selection].identifier)
+                        TextField("Species Identifier...", text: $speciesDNA[selection].identifier)
                             .frame(width: 150)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 5)
                             .scaleEffect(CGSize(width: 0.8, height: 0.8), anchor: .center)
                     }
-                    if species[0].identifier != species[1].identifier {
+                    if speciesDNA[0].identifier != speciesDNA[1].identifier {
                         Image(systemName: "checkmark.circle.fill")
                             .foregroundColor(.green)
                             .opacity(0.8)
@@ -72,7 +72,7 @@ struct CreateSpecies: View {
                 VStack(alignment: .leading) {
                     Text("Speed: ")
                         .font(.caption)
-                    Picker("", selection: $species[selection].speed) {
+                    Picker("", selection: $speciesDNA[selection].speed) {
                         ForEach(0..<10) { n in
                             Text("\(n)").tag(Double(n))
                         }
@@ -84,7 +84,7 @@ struct CreateSpecies: View {
                 VStack(alignment: .leading) {
                     Text("Sight: ")
                         .font(.caption)
-                    Picker("", selection: $species[selection].sightRadius) {
+                    Picker("", selection: $speciesDNA[selection].sight) {
                         ForEach(0..<10) { n in
                             Text("\(n)").tag(CGFloat(n))
                         }
@@ -96,7 +96,7 @@ struct CreateSpecies: View {
                 VStack(alignment: .leading) {
                     Text("Size: ")
                         .font(.caption)
-                    Picker("", selection: $species[selection].size) {
+                    Picker("", selection: $speciesDNA[selection].size) {
                         ForEach(0..<10) { n in
                             Text("\(n)").tag(Double(n))
                         }
@@ -104,17 +104,18 @@ struct CreateSpecies: View {
                     .pickerStyle(SegmentedPickerStyle())
                 }
                 .frame(width: 320)
-                ColorPicker("", selection: $species[selection].color)
+                ColorPicker("", selection: $speciesDNA[selection].color)
                     .padding(.horizontal, 200)
                     .padding(.vertical, 10)
                 Button(action: {
-                    env.baseSpecies = []
+                    env.baseDNA = []
                     loop(n){
-                        env.addSpecies(species[0])
-                        env.addSpecies(species[1])
+                        env.addSpecies(Species(speciesDNA[0], lifespan: 100, bounds: env.bounds))
+                        env.addSpecies(Species(speciesDNA[1], lifespan: 100, bounds: env.bounds))
                     }
-                    env.base(species[0])
-                    env.base(species[1])
+                    env.fetchFood(min: 25, max: 30)
+                    env.base(speciesDNA[0])
+                    env.base(speciesDNA[1])
                     showing.wrappedValue.dismiss()
                 }) {
                     ZStack {
@@ -132,6 +133,11 @@ struct CreateSpecies: View {
                             .fontWeight(.heavy)
                     }
                 }
+            }
+        }
+        .onAppear {
+            if env.baseDNA.count == 2 {
+                speciesDNA = env.baseDNA
             }
         }
     }

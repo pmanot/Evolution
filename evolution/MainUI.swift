@@ -21,11 +21,12 @@ struct MainUI: View {
     @State private var timerLoop = counter(10)
     @State private var foodLoop = counter(1000)
     @State private var updatePopulationLoop = counter(100)
+    @State private var resetDay = false
+    @State private var foodAmount = 15
     @State var delayCount: Int = 10
     @EnvironmentObject var env: SpeciesEnvironment
     @Environment(\.colorScheme) var colorScheme
-    let timer = Timer.publish(every: 0.01, on: .main, in: .common).autoconnect()
-    let dayTimer = Timer.publish(every: 2, on: .main, in: .common).autoconnect()
+    let timer = Timer.publish(every: 0.01, on: .main, in: .default).autoconnect()
     var body: some View {
         GeometryReader { geo in
             ZStack {
@@ -49,14 +50,17 @@ struct MainUI: View {
                         .ignoresSafeArea(.all)
                 }
                 
-                VStack {
-                    MultiLineChartView(data: [(populationArrayA, GradientColors.bluPurpl), (populationArrayB, GradientColors.orngPink)], title: "Population data", form: ChartForm.wide)
+                VStack(alignment: .leading) {
+                    MultiLineChartView(data: [(populationArrayA, GradientColors.bluPurpl), (populationArrayB, GradientColors.orngPink)], title: "Population data", legend: "\(env.baseDNA.first?.identifier ?? ""): \(Int(populationArrayA.last ?? 0))   \(env.baseDNA.last?.identifier ?? ""): \(Int(populationArrayB.last ?? 0))", form: ChartForm.wide)
                         .overlay(Color.blueGreen.opacity(0.1))
                         .clipShape(RoundedRectangle(cornerRadius: 20))
                         .overlay(RoundedRectangle(cornerRadius: 20).strokeBorder(Color.lightBlueGreen, lineWidth: 2))
                         .scaleEffect(CGSize(width: 0.6, height: 0.6), anchor: .center)
+                        .frame(width: 200, height: 150)
+                        .animation(.default)
                 }
-                .position(x: geo.size.width - 130, y: 65)
+                .animation(.default)
+                .position(x: geo.size.width - 130, y: 70)
                 
                 Button(action: {
                     createSpeciesView.toggle()
@@ -93,8 +97,8 @@ struct MainUI: View {
                     .buttonStyle(FunctionalButton())
                     
                     Button(action: {
-                        for species in env.baseSpecies {
-                            env.addSpecies(species, n: 2)
+                        for dna in env.baseDNA {
+                            env.addSpecies(Species(dna, lifespan: 200, bounds: env.bounds), n: 2)
                         }
                     }){
                         HStack(spacing: 10) {
@@ -114,31 +118,42 @@ struct MainUI: View {
                 .position(x: geo.size.width - 80, y: (geo.size.height - geo.size.width/2) - 253)
                 
                 HStack {
-                    Button(action: delayCount > 1 ? {delayCount = Int(Double(delayCount)*1.5); timerLoop = counter(delayCount)} : {delayCount = 2}){
-                        Image(systemName: "chevron.left.circle.fill")
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 25, height: 25)
-                            .foregroundColor(Color.darkJungleGreen)
-                            .overlay(Circle().stroke(Color.darkJungleGreen, lineWidth: 2))
-                            .background(Color.lightBlueGreen)
-                            .clipShape(Circle())
+                    Group {
+                        Button(action: delayCount > 1 ? {delayCount = Int(Double(delayCount)*1.5); timerLoop = counter(delayCount)} : {delayCount = 2}){
+                            Image(systemName: "chevron.left.circle.fill")
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 25, height: 25)
+                                .foregroundColor(Color.darkJungleGreen)
+                                .overlay(Circle().stroke(Color.darkJungleGreen, lineWidth: 2))
+                                .background(Color.lightBlueGreen)
+                                .clipShape(Circle())
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        Button(action: delayCount > 1 ? {delayCount = Int(Double(delayCount)/1.5); timerLoop = counter(delayCount)} : {delayCount = 1; timerLoop = counter(delayCount)}){
+                            Image(systemName: "chevron.right.circle.fill")
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 25, height: 25)
+                                .foregroundColor(Color.darkJungleGreen)
+                                .overlay(Circle().stroke(Color.darkJungleGreen, lineWidth: 2))
+                                .background(Color.lightBlueGreen)
+                                .clipShape(Circle())
+                        }
+                        .buttonStyle(PlainButtonStyle())
                     }
-                    .buttonStyle(PlainButtonStyle())
                 
-                    Button(action: delayCount > 1 ? {delayCount = Int(Double(delayCount)/1.5); timerLoop = counter(delayCount)} : {delayCount = 1; timerLoop = counter(delayCount)}){
-                        Image(systemName: "chevron.right.circle.fill")
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 25, height: 25)
-                            .foregroundColor(Color.darkJungleGreen)
-                            .overlay(Circle().stroke(Color.darkJungleGreen, lineWidth: 2))
-                            .background(Color.lightBlueGreen)
-                            .clipShape(Circle())
+                    Picker("", selection: $foodAmount) {
+                        Text("low").tag(10)
+                        Text("medium").tag(20)
+                        Text("high").tag(35)
                     }
-                    .buttonStyle(PlainButtonStyle())
+                    .pickerStyle(SegmentedPickerStyle())
+                    .frame(width: 200)
+                    .scaleEffect(CGSize(width: 0.7, height: 0.7), anchor: .center)
+                    .frame(width: 140)
                 }
-                .position(x: geo.size.width - 320, y: (geo.size.height - geo.size.width/2) - 200)
+                .position(x: geo.size.width - 250, y: (geo.size.height - geo.size.width/2) - 200)
                 
                 ZStack {
                     (colorScheme == .dark ? Color.mediumPurple : Color.coralPink)
@@ -163,6 +178,9 @@ struct MainUI: View {
         .onReceive(timer){ _ in
             timerLoop {
                 for n in 0..<env.alive.count {
+                    if resetDay {
+                        env.alive[n].dayReset()
+                    }
                     withinLimit(n, env.alive.count) { // make sure alive[n] is a valid index (sometimes n goes out of bounds while running due to glitchy behaviour with ForEach).
                         env.alive[n].updatePos() //update position on-screen
                         if env.alive.count < maxPopulationSize { // making sure new births only happen if the population is lower than its peak
@@ -177,9 +195,11 @@ struct MainUI: View {
                                 }
                             }
                         }
-                        env.alive[n].eatFood(&env.food, env.alive)
+                        env.alive[n].eatFood(&env.food)
                     }
                 }
+                resetDay = false
+                
                 for d in env.alive.filter({ $0.disabled == true }) {
                     deathAnimationloop {
                         deathCount += 1
@@ -189,13 +209,14 @@ struct MainUI: View {
                         deathAnimationloop = counter(50)
                     }
                 }
+                
                 updatePopulationLoop {
-                    if env.baseSpecies.count == 2 {
-                        if populationArrayA.last != Double(env.alive.filter {$0.identifier == env.baseSpecies[0].identifier}.count) {
-                            populationArrayA.append(Double(env.alive.filter {$0.identifier == env.baseSpecies[0].identifier}.count))
+                    if env.baseDNA.count == 2 {
+                        if populationArrayA.last != Double(env.alive.filter {$0.identifier == env.baseDNA[0].identifier}.count) {
+                            populationArrayA.append(Double(env.alive.filter {$0.identifier == env.baseDNA[0].identifier}.count))
                         }
-                        if populationArrayB.last != Double(env.alive.filter {$0.identifier == env.baseSpecies[1].identifier}.count) {
-                            populationArrayB.append(Double(env.alive.filter {$0.identifier == env.baseSpecies[1].identifier}.count))
+                        if populationArrayB.last != Double(env.alive.filter {$0.identifier == env.baseDNA[1].identifier}.count) {
+                            populationArrayB.append(Double(env.alive.filter {$0.identifier == env.baseDNA[1].identifier}.count))
                         }
                         while populationArrayA.count >= 100 {
                             populationArrayA.removeFirst()
@@ -206,10 +227,13 @@ struct MainUI: View {
                     }
                     updatePopulationLoop = counter(100)
                 }
+                
                 foodLoop {
-                    env.fetchFood(min: 10, max: 15)
+                    env.fetchFood(min: foodAmount, max: foodAmount + 5)
                     foodLoop = counter(1000)
+                    resetDay = true
                 }
+                
                 timerLoop = counter(delayCount)
             }
         }
@@ -241,30 +265,3 @@ func allEven(_ x: Int) -> IndexSet {
     return IndexSet(evenNumbers)
 }
 
-/*
-.onReceive(timer, perform: { _ in
-    for n in 0..<env.alive.count {
-        withinLimit(n, env.alive.count) { // make sure alive[n] is a valid index (sometimes n goes out of bounds while running due to glitchy behaviour with ForEach).
-            env.alive[n].updatePos() //update position on-screen
-            
-            env.alive[n].eatFood(&env.food, env.alive) // eat any nearby food
-            if env.alive.count < maxPopulationSize { // making sure new births only happen if the population is lower than its peak
-                rate(0.005) { // 0.005 chance of birth per cell every 0.01 seconds, which is approximately 0.5 per second or 50 %
-                    env.offspring(env.alive[n], b: gen(coordinates: env.alive[n].coordinates, env.bounds)) //adding the offspring to the array of all currently env.alive species
-                    birthCount += 1 //increase birthCount
-                }
-            }
-            
-            env.alive[n].onDeath { // when cell dies
-                withAnimation(.easeInOut(duration: 0.1)) {
-                    env.alive[n].color = .black
-                }
-                // run counter
-                    env.alive.remove(at: n)
-                    deathCount += 1
-            }
-        }
-    }
-    currentPopulation = env.alive.count
-})
-*/
