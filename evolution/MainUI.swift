@@ -45,21 +45,21 @@ struct MainUI: View {
                         .frame(width: geo.size.width, height: geo.size.height)
                         .ignoresSafeArea(.all)
                         .colorInvert()
-                        .overlay(Color.darkBlueGreen.opacity(0.1))
+                        .overlay(Color.lightBlueGray.opacity(0.15))
                         .ignoresSafeArea(.all)
                 }
                 
-                /*
-                MultiLineChartView(data: [(populationArray, GradientColors.bluPurpl), (deathArray, GradientColors.prplPink), (birthArray, GradientColors.green)], title: "Population data", form: ChartForm.wide)
-                    .overlay(Color.blueGreen.opacity(0.1))
-                    .clipShape(RoundedRectangle(cornerRadius: 20))
-                    .overlay(RoundedRectangle(cornerRadius: 20).strokeBorder(Color.lightBlueGreen, lineWidth: 2))
-                    .scaleEffect(CGSize(width: 0.6, height: 0.6), anchor: .center)
-                    .position(x: geo.size.width - 130, y: 65)
-                */
+                VStack {
+                    MultiLineChartView(data: [(populationArrayA, GradientColors.bluPurpl), (populationArrayB, GradientColors.orngPink)], title: "Population data", form: ChartForm.wide)
+                        .overlay(Color.blueGreen.opacity(0.1))
+                        .clipShape(RoundedRectangle(cornerRadius: 20))
+                        .overlay(RoundedRectangle(cornerRadius: 20).strokeBorder(Color.lightBlueGreen, lineWidth: 2))
+                        .scaleEffect(CGSize(width: 0.6, height: 0.6), anchor: .center)
+                }
+                .position(x: geo.size.width - 130, y: 65)
                 
                 Button(action: {
-                    settingsShowing.toggle()
+                    createSpeciesView.toggle()
                 }){
                     Image(systemName: "gearshape.fill")
                         .resizable()
@@ -83,7 +83,7 @@ struct MainUI: View {
                     Button(action: {
                         env.alive = []
                         env.food = []
-                        currentPopulation = 0; birthCount = 0; deathCount = 0
+                        populationArrayA = []; populationArrayB = []; birthCount = 0; deathCount = 0
                     }){
                         Text("reset")
                             .font(.caption2)
@@ -93,7 +93,9 @@ struct MainUI: View {
                     .buttonStyle(FunctionalButton())
                     
                     Button(action: {
-                        env.respawn(n: 1)
+                        for species in env.baseSpecies {
+                            env.addSpecies(species, n: 2)
+                        }
                     }){
                         HStack(spacing: 10) {
                             Image(systemName: "plus.circle.fill")
@@ -112,7 +114,7 @@ struct MainUI: View {
                 .position(x: geo.size.width - 80, y: (geo.size.height - geo.size.width/2) - 253)
                 
                 HStack {
-                    Button(action: delayCount > 1 ? {delayCount = Int(Double(delayCount)*1.5); timerLoop = counter(delayCount)} : {delayCount = 1}){
+                    Button(action: delayCount > 1 ? {delayCount = Int(Double(delayCount)*1.5); timerLoop = counter(delayCount)} : {delayCount = 2}){
                         Image(systemName: "chevron.left.circle.fill")
                             .resizable()
                             .aspectRatio(contentMode: .fit)
@@ -139,9 +141,9 @@ struct MainUI: View {
                 .position(x: geo.size.width - 320, y: (geo.size.height - geo.size.width/2) - 200)
                 
                 ZStack {
-                    Color.coralPink
+                    (colorScheme == .dark ? Color.mediumPurple : Color.coralPink)
                         .clipShape(RoundedRectangle(cornerRadius: 8))
-                        .overlay(RoundedRectangle(cornerRadius: 9).stroke(Color.pink, lineWidth: 2))
+                        .overlay(RoundedRectangle(cornerRadius: 9).stroke(colorScheme == .dark ? Color.darkBlueGreen : Color.pink, lineWidth: 2))
                         .frame(width: geo.size.width - 10, height: geo.size.width - 10, alignment: .center)
                         .position(x: geo.size.width/2, y: geo.size.height - 188)
                         .opacity(0.7)
@@ -149,7 +151,8 @@ struct MainUI: View {
                     ForEach(env.alive, id: \.id) { s in
                         Cell(s)
                     }
-                        .background(EnvironmentView())
+                    .transition(.asymmetric(insertion: .bright, removal: .opacity))
+                    .background(EnvironmentView())
                 }
                 .onAppear {
                     env.bounds = Bounds(frame: CGSize(width: geo.size.width - 40, height: geo.size.width - 40), position: CGPoint(x: geo.size.width/2, y: geo.size.height - 188))
@@ -162,39 +165,57 @@ struct MainUI: View {
                 for n in 0..<env.alive.count {
                     withinLimit(n, env.alive.count) { // make sure alive[n] is a valid index (sometimes n goes out of bounds while running due to glitchy behaviour with ForEach).
                         env.alive[n].updatePos() //update position on-screen
-                        
-                        env.alive[n].eatFood(&env.food, env.alive) // eat any nearby food
                         if env.alive.count < maxPopulationSize { // making sure new births only happen if the population is lower than its peak
-                            rate(env.alive[n].foodEnergy.count >= 1 ? 0.2 : 0.05) { // 0.005 chance of birth per cell every 0.01 seconds, which is approximately 0.5 per second or 50 %
-                                withAnimation(.easeIn(duration: 0.4)){
-                                    env.offspring(env.alive[n], b: gen(coordinates: env.alive[n].coordinates, env.bounds))
+                            if env.alive[n].foodEnergy.count >= 1 {
+                                rate(0.002) { // 0.005 chance of birth per cell every 0.01 seconds, which is approximately 0.5 per second or 50 %
+                                    withAnimation(.easeInOut(duration: 0.5)) {
+                                        env.offspring(env.alive[n], b: env.alive[n])
+                                        env.alive[n].foodEnergy.removeFirst()
+                                    }
+                                     //adding the offspring to the array of all currently env.alive species
+                                    birthCount += 1 //increase birthCount
                                 }
-                                 //adding the offspring to the array of all currently env.alive species
-                                birthCount += 1 //increase birthCount
                             }
                         }
-                        
-                        env.alive[n].onDeath { // when cell dies
-                            env.alive[n].color = .red
-                        }
+                        env.alive[n].eatFood(&env.food, env.alive)
                     }
                 }
-                currentPopulation = env.alive.count
                 for d in env.alive.filter({ $0.disabled == true }) {
                     deathAnimationloop {
                         deathCount += 1
-                        withAnimation(.easeInOut(duration: 0.5)) {
+                        withAnimation(.easeIn(duration: 0.3)) {
                             env.makeFood(d: d)
                         }
                         deathAnimationloop = counter(50)
                     }
                 }
+                updatePopulationLoop {
+                    if env.baseSpecies.count == 2 {
+                        if populationArrayA.last != Double(env.alive.filter {$0.identifier == env.baseSpecies[0].identifier}.count) {
+                            populationArrayA.append(Double(env.alive.filter {$0.identifier == env.baseSpecies[0].identifier}.count))
+                        }
+                        if populationArrayB.last != Double(env.alive.filter {$0.identifier == env.baseSpecies[1].identifier}.count) {
+                            populationArrayB.append(Double(env.alive.filter {$0.identifier == env.baseSpecies[1].identifier}.count))
+                        }
+                        while populationArrayA.count >= 100 {
+                            populationArrayA.removeFirst()
+                        }
+                        while populationArrayB.count >= 100 {
+                            populationArrayB.removeFirst()
+                        }
+                    }
+                    updatePopulationLoop = counter(100)
+                }
+                foodLoop {
+                    env.fetchFood(min: 10, max: 15)
+                    foodLoop = counter(1000)
+                }
                 timerLoop = counter(delayCount)
             }
         }
-        .sheet(isPresented: $settingsShowing) {
-            SettingsUI()
-                .environmentObject(SpeciesEnvironment())
+        .sheet(isPresented: $createSpeciesView) {
+            CreateSpecies()
+                .environmentObject(env)
         }
     }
 }
