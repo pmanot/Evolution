@@ -13,8 +13,8 @@ struct MainUI: View {
     @State var birthCount: Int = 0
     @State var deathCount: Int = 0
     @State private var deathArray: [Double] = []
-    @State private var populationArrayA: [Double] = []
-    @State private var populationArrayB: [Double] = []
+    @State private var populationArrayA: [Double] = [0]
+    @State private var populationArrayB: [Double] = [0]
     @State private var birthArray: [Double] = []
     @State var maxPopulationSize = 20
     @State private var deathAnimationloop = counter(50)
@@ -26,7 +26,7 @@ struct MainUI: View {
     @State var delayCount: Int = 10
     @EnvironmentObject var env: SpeciesEnvironment
     @Environment(\.colorScheme) var colorScheme
-    let timer = Timer.publish(every: 0.01, on: .main, in: .default).autoconnect()
+    let timer = Timer.publish(every: 0.01, on: .main, in: .common).autoconnect()
     var body: some View {
         GeometryReader { geo in
             ZStack {
@@ -162,12 +162,11 @@ struct MainUI: View {
                         .frame(width: geo.size.width - 10, height: geo.size.width - 10, alignment: .center)
                         .position(x: geo.size.width/2, y: geo.size.height - 188)
                         .opacity(0.7)
-                    
+                    EnvironmentView()
                     ForEach(env.alive, id: \.id) { s in
                         Cell(s)
+                            .transition(.asymmetric(insertion: .bright, removal: .opacity))
                     }
-                    .transition(.asymmetric(insertion: .bright, removal: .opacity))
-                    .background(EnvironmentView())
                 }
                 .onAppear {
                     env.bounds = Bounds(frame: CGSize(width: geo.size.width - 40, height: geo.size.width - 40), position: CGPoint(x: geo.size.width/2, y: geo.size.height - 188))
@@ -181,8 +180,10 @@ struct MainUI: View {
                     if resetDay {
                         env.alive[n].dayReset()
                     }
+                    
                     withinLimit(n, env.alive.count) { // make sure alive[n] is a valid index (sometimes n goes out of bounds while running due to glitchy behaviour with ForEach).
                         env.alive[n].updatePos() //update position on-screen
+                        
                         if env.alive.count < maxPopulationSize { // making sure new births only happen if the population is lower than its peak
                             if env.alive[n].foodEnergy.count >= 1 {
                                 rate(0.002) { // 0.005 chance of birth per cell every 0.01 seconds, which is approximately 0.5 per second or 50 %
@@ -195,20 +196,16 @@ struct MainUI: View {
                                 }
                             }
                         }
+                        env.alive[n].onDeath {
+                            let id = env.alive[n].id
+                            delay(1){
+                                env.alive.removeAll(where: {$0.id == id})
+                            }
+                        }
                         env.alive[n].eatFood(&env.food)
                     }
                 }
                 resetDay = false
-                
-                for d in env.alive.filter({ $0.disabled == true }) {
-                    deathAnimationloop {
-                        deathCount += 1
-                        withAnimation(.easeIn(duration: 0.3)) {
-                            env.makeFood(d: d)
-                        }
-                        deathAnimationloop = counter(50)
-                    }
-                }
                 
                 updatePopulationLoop {
                     if env.baseDNA.count == 2 {
