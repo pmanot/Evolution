@@ -165,7 +165,7 @@ struct MainUI: View {
                     EnvironmentView()
                     ForEach(env.alive, id: \.id) { s in
                         Cell(s)
-                            .transition(.asymmetric(insertion: .bright, removal: .opacity))
+                            .transition(.asymmetric(insertion: .bright, removal: .identity))
                     }
                 }
                 .onAppear {
@@ -187,22 +187,20 @@ struct MainUI: View {
                         if env.alive.count < maxPopulationSize { // making sure new births only happen if the population is lower than its peak
                             if env.alive[n].foodEnergy.count >= 1 {
                                 rate(0.002) { // 0.005 chance of birth per cell every 0.01 seconds, which is approximately 0.5 per second or 50 %
-                                    withAnimation(.easeInOut(duration: 0.5)) {
-                                        env.offspring(env.alive[n], b: env.alive[n])
-                                        env.alive[n].foodEnergy.removeFirst()
-                                    }
+                                    env.alive[n].foodEnergy.removeFirst()
+                                    env.alive[n].replicate(&env.alive)
                                      //adding the offspring to the array of all currently env.alive species
                                     birthCount += 1 //increase birthCount
                                 }
                             }
                         }
+                        env.alive[n].eatFood(&env.food)
                         env.alive[n].onDeath {
-                            let id = env.alive[n].id
-                            delay(1){
-                                env.alive.removeAll(where: {$0.id == id})
+                            let dead = env.alive[n]
+                            delay(0.5){
+                                env.makeFood(d: dead)
                             }
                         }
-                        env.alive[n].eatFood(&env.food)
                     }
                 }
                 resetDay = false
@@ -215,14 +213,8 @@ struct MainUI: View {
                         if populationArrayB.last != Double(env.alive.filter {$0.identifier == env.baseDNA[1].identifier}.count) {
                             populationArrayB.append(Double(env.alive.filter {$0.identifier == env.baseDNA[1].identifier}.count))
                         }
-                        while populationArrayA.count >= 100 {
-                            populationArrayA.removeFirst()
-                        }
-                        while populationArrayB.count >= 100 {
-                            populationArrayB.removeFirst()
-                        }
                     }
-                    updatePopulationLoop = counter(100)
+                    updatePopulationLoop = counter(5)
                 }
                 
                 foodLoop {
@@ -234,10 +226,7 @@ struct MainUI: View {
                 timerLoop = counter(delayCount)
             }
         }
-        .sheet(isPresented: $createSpeciesView) {
-            CreateSpecies()
-                .environmentObject(env)
-        }
+        .fullScreenCover(isPresented: $createSpeciesView, content: CreateSpecies.init)
     }
 }
 
@@ -261,4 +250,5 @@ func allEven(_ x: Int) -> IndexSet {
     }
     return IndexSet(evenNumbers)
 }
+
 

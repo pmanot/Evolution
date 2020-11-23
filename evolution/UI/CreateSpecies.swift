@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct CreateSpecies: View {
-    @State var speciesDNA = [SpeciesDNA("A", speed: 5, sight: 4, size: 1, color: Color.blue), SpeciesDNA("B", speed: 6, sight: 6, size: 1, color: Color.red)]
+    @State var speciesDNA = [SpeciesDNA("Blue", speed: 5, sight: 4, size: 1, color: Color.blue), SpeciesDNA("Red", speed: 6, sight: 6, size: 1, color: Color.red)]
     @State private var selection: Int = 0
     @State private var n: Int = 5
     @EnvironmentObject var env: SpeciesEnvironment
@@ -16,7 +16,6 @@ struct CreateSpecies: View {
     @Environment(\.colorScheme) var colorScheme
     var body: some View {
         ZStack {
-            speciesDNA[selection].color.brightness(0.2)
             VStack {
                 Text("Base Species")
                     .fontWeight(.heavy)
@@ -146,5 +145,6 @@ struct CreateSpecies: View {
 struct CreateSpecies_Previews: PreviewProvider {
     static var previews: some View {
         CreateSpecies()
+            .environmentObject(SpeciesEnvironment())
     }
 }

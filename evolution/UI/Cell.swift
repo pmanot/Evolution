@@ -34,7 +34,7 @@ struct Cell: View {
         .overlay(some_species.color.opacity(0.5)
         .clipShape(Circle()).frame(width: 26))
         .position(some_species.coordinates.cg())
-        .animation(.easeInOut(duration: 0.5))
+        .animation(.easeInOut(duration: 0.75))
     }
 }
 

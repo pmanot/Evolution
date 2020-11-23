@@ -31,8 +31,9 @@ struct FoodView: View {
             ForEach(env.food, id: \.id) { food in
                 SingleFoodMolecule(food)
                     .environmentObject(env)
+                    .animation(.easeIn(duration: 0.3))
+                    .transition(.bright)
             }
-            .animation(.easeIn(duration: 0.3))
         }
     }
 }
