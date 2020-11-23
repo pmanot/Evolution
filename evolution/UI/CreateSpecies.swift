@@ -134,6 +134,7 @@ struct CreateSpecies: View {
                 }
             }
         }
+        .background(GenomeAnimation(color: speciesDNA[selection].color).opacity(0.2).offset(x: -80))
         .onAppear {
             if env.baseDNA.count == 2 {
                 speciesDNA = env.baseDNA
