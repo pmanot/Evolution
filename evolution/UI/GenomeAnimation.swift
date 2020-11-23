@@ -8,30 +8,30 @@
 import SwiftUI
 
 struct GenomeAnimation: View {
-    @State private var length: Int = 20
+    @State private var length: Int = 50
     @State private var width: CGFloat = 60
     @State private var rotation: Double = 0
-    @State private var spacing: Double = 1
+    @State private var spacing: Double = 0
     var color1: Color = .blue
     var color2: Color = .red
     init(color: Color) {
         color1 = color; color2 = color
     }
-    let timer = Timer.publish(every: 0.1, on: .current, in: .common).autoconnect()
+    let timer = Timer.publish(every: 0.2, on: .current, in: .common).autoconnect()
     var body: some View {
         GeometryReader { geo in
             ZStack {
-                DotWave(size: 10, spacing: spacing, width: 70, n: length, loops: 3, rotation: rotation, flipped: true)
+                DotWave(size: 5, spacing: spacing, width: 70, n: length, loops: 4, rotation: rotation, flipped: true)
                     .foregroundColor(color1)
-                DotWave(size: 10, spacing: spacing, width: 70, n: length + 5, loops: 4, rotation: 0)
+                DotWave(size: 5, spacing: spacing, width: 70, n: length + 5, loops: 5, rotation: 0)
                     .foregroundColor(color2)
                     .onReceive(timer, perform: { _ in
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            if length != 90 {
+                        withAnimation(.easeOut(duration: 0.1)) {
+                            if length != 300 {
                                 length += 1
                                 width += 2
                                 spacing += 0.1
-                                rotation += 2
+                                rotation += 1
                                 if rotation == 360 {
                                     rotation = 0
                                 }
@@ -40,7 +40,7 @@ struct GenomeAnimation: View {
                     })
             }
             .position(x: geo.size.width/2, y: geo.size.height/2)
-        }
+        }.animation(.easeInOut)
     }
 }
 
