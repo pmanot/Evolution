@@ -26,7 +26,8 @@ struct MainUI: View {
     @State var delayCount: Int = 10
     @EnvironmentObject var env: SpeciesEnvironment
     @Environment(\.colorScheme) var colorScheme
-    let timer = Timer.publish(every: 0.01, on: .main, in: .common).autoconnect()
+    @State private var timer = Timer.publish(every: 0.01, on: .main, in: .common).autoconnect()
+    @State private var paused = false
     var body: some View {
         GeometryReader { geo in
             ZStack {
@@ -62,16 +63,39 @@ struct MainUI: View {
                 .animation(.default)
                 .position(x: geo.size.width - 130, y: 70)
                 
-                Button(action: {
-                    createSpeciesView.toggle()
-                }){
-                    Image(systemName: "gearshape.fill")
-                        .resizable()
-                        .foregroundColor(.darkblueGray)
+                ZStack {
+                    Capsule()
+                        .foregroundColor(.lightBlueGray)
+                        .frame(width: 70, height: 40)
+                    HStack(spacing: 5) {
+                        Button(action: {
+                            createSpeciesView.toggle()
+                        }){
+                            Image(systemName: "gearshape.fill")
+                                .resizable()
+                                .foregroundColor(.darkblueGray)
+                        }
+                        .frame(width: 22, height: 22)
+                        
+                        Button(action: {
+                            withAnimation {
+                                self.paused.toggle()
+                            }
+                            if paused {
+                                self.timer.upstream.connect().cancel()
+                            }
+                            else {
+                                self.timer = Timer.publish(every: 0.01, on: .main, in: .common).autoconnect()
+                            }
+                        }){
+                            Image(systemName: !paused ? "pause.circle.fill" : "play.circle.fill")
+                                .resizable()
+                                .foregroundColor(.lightTurquoise)
+                        }
+                        .frame(width: 22, height: 22)
+                    }
                 }
-                .frame(width: 22, height: 22)
-                .position(x: 26, y: 26)
-                
+                .position(x: 50, y: 28)
                 
                 VStack(alignment: .leading, spacing: 5) {
                     Button(action: {
@@ -226,7 +250,12 @@ struct MainUI: View {
                 timerLoop = counter(delayCount)
             }
         }
-        .fullScreenCover(isPresented: $createSpeciesView, content: CreateSpecies.init)
+        .fullScreenCover(isPresented: $createSpeciesView){
+            CreateSpecies()
+                .onAppear {
+                    paused.toggle()
+                }
+        }
     }
 }
 
