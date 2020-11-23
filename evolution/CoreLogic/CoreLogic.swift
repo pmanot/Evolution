@@ -72,10 +72,9 @@ public final class SpeciesEnvironment: ObservableObject { // the environment for
     }
     
     func makeFood(d: Species) {
-        if let ind = alive.firstIndex(of: d) {
-            food.append(Food(energy: Double(d.maxLifespan)/1000, color: .green, position: d.coordinates))
-            alive.remove(at: ind)
-        }
+        let id = d.id
+        food.append(Food(energy: Double(d.maxLifespan)/1000, color: .green, position: d.coordinates))
+        alive.remove(id: id)
     }
 }
 

@@ -11,6 +11,7 @@ import SwiftUI
 //Species
 struct Species: Identifiable, Hashable {
     let id = UUID()
+    var genome: [SpeciesDNA]
     var identifier: String
     var color: Color
     var foodEnergy: [Food]
@@ -29,7 +30,7 @@ struct Species: Identifiable, Hashable {
     // var infected: Bool = false // coming soon
     var dir = CGFloat.random(in: 0..<2*(.pi)) //direction in radians
     var sightRadius: CGFloat
-    init(name: String, speed: Int, lifespan: Double, sight: CGFloat = 5, infected: Bool = false, coordinates: Point = Point(x: 200, y: 300), bounds: Bounds = Bounds(left: 50, right: 360, up: 160, down: 660), color: Color = .green) {
+    init(name: String, speed: Int, lifespan: Double, sight: CGFloat = 5, infected: Bool = false, coordinates: Point = Point(x: 200, y: 300), bounds: Bounds = SpeciesEnvironment().bounds, color: Color = .green) {
         self.identifier = name
         self.speed = speed
         self.lifespan = lifespan
@@ -43,9 +44,11 @@ struct Species: Identifiable, Hashable {
         self.disabled = false
         self.movementCounter = Int(10 - speed)
         self.foodDetected = false
+        genome = []
+        genome.append(SpeciesDNA(name, speed: speed, sight: sight, size: self.size, color: self.color))
     }
     
-    init(_ base: SpeciesDNA, lifespan: Double, bounds: Bounds) {
+    init(_ base: SpeciesDNA, lifespan: Double, bounds: Bounds = SpeciesEnvironment().bounds) {
         identifier = base.identifier
         speed = base.speed
         color = base.color
@@ -58,6 +61,8 @@ struct Species: Identifiable, Hashable {
         self.disabled = false
         self.movementCounter = Int(10 - speed)
         self.foodDetected = false
+        genome = []
+        genome.append(base)
     }
     
     mutating func updatePos() { // updates the xy position of a cell (called at fixed intervals of time)
@@ -102,12 +107,11 @@ struct Species: Identifiable, Hashable {
         }
     }
     
-    mutating func remove() {
-        let env = SpeciesEnvironment()
-        env.alive.removeAll(where: { $0 == self })
+    func remove(from arr: inout [Species]) {
+        arr.removeAll(where: { $0.id == self.id })
     }
     mutating func avoidBounds() { // bounds collision function to prevent cells from going out of bound
-        if coordinates.x < bounds.left || coordinates.x > bounds.right || coordinates.y > bounds.down || coordinates.y < bounds.up {
+        if coordinates.x <= bounds.left || coordinates.x >= bounds.right || coordinates.y >= bounds.down || coordinates.y <= bounds.up {
             coordinates.x.cap(bounds.left..<bounds.right)
             coordinates.y.cap(bounds.up..<bounds.down)
             dir = CGFloat.random(in: 0..<2*(.pi))
@@ -128,23 +132,37 @@ struct Species: Identifiable, Hashable {
 
     mutating func eatFood(_ food: inout [Food]) {
         if !self.foodDetected {
-            for f in 0..<food.count {
-                withinLimit(f, food.count){ // make sure f is a valid index
-                    if !((self.coordinates.y - food[f].position.y) >= 10 + sightRadius) && !((self.coordinates.x - food[f].position.x) >= 10 + sightRadius) {
-                        if self.coordinates.inRange(of: food[f].position, radius: 10 + sightRadius) {
-                            self.foodEnergy.append(food[f])
-                            food.remove(at: f)
-                            self.foodDetected = false
-                        }
+            for f in food {
+                if !((self.coordinates.y - f.position.y) >= 5 + sightRadius) && !((self.coordinates.x - f.position.x) >= 5 + sightRadius) {
+                    if self.coordinates.inRange(of: f.position, radius: 5 + sightRadius) {
+                        self.foodEnergy.append(f)
+                        food.removeAll(where: {$0.id == f.id})
+                        self.foodDetected = false
                     }
-                    
                 }
             }
         }
     }
+    
+    func replicate(_ speciesArray: inout Array<Species>){
+        var offspring = Species(self.genome[0], lifespan: self.maxLifespan, bounds: self.bounds)
+        offspring.coordinates = self.coordinates
+        speciesArray.append(offspring)
+    }
 }
 
 
+struct Food: Identifiable, Hashable {
+    var id = UUID()
+    var energy: Double // foods with higher energy allow cells to survive longer
+    var color: Color
+    var position: Point
+    init(energy: Double, color: Color, position: Point) {
+        self.energy = energy
+        self.color = color
+        self.position = position
+    }
+}
 
 struct Bounds: Hashable { // used to define the boundaries of a frame
     var left: CGFloat
@@ -162,18 +180,6 @@ struct Bounds: Hashable { // used to define the boundaries of a frame
         self.right = right
         self.up = up
         self.down = down
-    }
-}
-
-struct Food: Identifiable, Hashable {
-    var id = UUID()
-    var energy: Double // foods with higher energy allow cells to survive longer
-    var color: Color
-    var position: Point
-    init(energy: Double, color: Color, position: Point) {
-        self.energy = energy
-        self.color = color
-        self.position = position
     }
 }
 
@@ -205,7 +211,7 @@ struct Point: Hashable, Strideable { // Custom CGPoint struct that conforms to H
     }
 }
 
-struct SpeciesDNA {
+struct SpeciesDNA: Hashable {
     var identifier: String
     var speed: Int
     var sight: CGFloat

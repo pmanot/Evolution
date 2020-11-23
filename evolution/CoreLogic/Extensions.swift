@@ -128,3 +128,9 @@ extension Color {
     static let darkJungleGreen = color(21, 86, 86)
     static let lightTurquoise = color(162, 233, 233)
 }
+
+extension Array where Element == Species {
+    mutating func remove(id: UUID){
+        self.removeAll {$0.id == id}
+    }
+}
