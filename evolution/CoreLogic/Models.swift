@@ -133,7 +133,7 @@ struct Species: Identifiable, Hashable {
     mutating func eatFood(_ food: inout [Food]) {
         if !self.foodDetected {
             for f in food {
-                if !((self.coordinates.y - f.position.y) >= 5 + sightRadius) && !((self.coordinates.x - f.position.x) >= 5 + sightRadius) {
+                if !(abs(self.coordinates.y - f.position.y) >= 5 + sightRadius) && !(abs(self.coordinates.x - f.position.x) >= 5 + sightRadius) {
                     if self.coordinates.inRange(of: f.position, radius: 5 + sightRadius) {
                         self.foodEnergy.append(f)
                         food.removeAll(where: {$0.id == f.id})
