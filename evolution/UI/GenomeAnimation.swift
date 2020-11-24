@@ -9,44 +9,54 @@ import SwiftUI
 
 struct GenomeAnimation: View {
     @State private var length: Int = 50
-    @State private var width: CGFloat = 60
+    @State private var width: Double = 50
     @State private var rotation: Double = 0
-    @State private var spacing: Double = 0
-    var color1: Color = .blue
-    var color2: Color = .red
-    init(color: Color) {
-        color1 = color; color2 = color
+    @State private var spacing: Double = 0.5
+    var primaryColor: Color = .blue
+    var secondaryColor: Color = .red
+    init(primary: Color, secondary: Color) {
+        primaryColor = primary; secondaryColor = secondary
     }
     let timer = Timer.publish(every: 0.2, on: .current, in: .common).autoconnect()
     var body: some View {
         GeometryReader { geo in
             ZStack {
-                DotWave(size: 5, spacing: spacing, width: 70, n: length, loops: 4, rotation: rotation, flipped: true)
-                    .foregroundColor(color1)
-                DotWave(size: 5, spacing: spacing, width: 70, n: length + 5, loops: 5, rotation: 0)
-                    .foregroundColor(color2)
+                Group {
+                    DotWave(size: 10, spacing: spacing, width: width, n: length, loops: 5, rotation: 0, flipped: true)
+                        .foregroundColor(primaryColor)
+                    DotWave(size: 7, spacing: spacing, width: 50, n: length + 5, loops: 4, rotation: 0, flipped: true)
+                        .foregroundColor(primaryColor).brightness(0.2)
+                        .blur(radius: 0.5)
+                }
+                
+                Group {
+                    DotWave(size: 3, spacing: spacing, width: width, n: length + 5, loops: 5, rotation: 0)
+                        .foregroundColor(secondaryColor)
+                    DotWave(size: 5, spacing: spacing, width: 50, n: length + 10, loops: 6, rotation: 0)
+                        .foregroundColor(secondaryColor).brightness(0.2)
+                    DotWave(size: 6, spacing: spacing, width: 50, n: length + 12, loops: 5, rotation: 0)
+                        .foregroundColor(secondaryColor).brightness(0.5)
+                }
                     .onReceive(timer, perform: { _ in
-                        withAnimation(.easeOut(duration: 0.1)) {
+                        withAnimation(.easeInOut(duration: 1)) {
                             if length != 300 {
                                 length += 1
-                                width += 2
+                                width += 0.25
                                 spacing += 0.1
-                                rotation += 1
-                                if rotation == 360 {
-                                    rotation = 0
-                                }
                             }
+                            width = width.capped(0..<60)
                         }
                     })
             }
             .position(x: geo.size.width/2, y: geo.size.height/2)
-        }.animation(.easeInOut)
+        }
+        .drawingGroup()
     }
 }
 
 struct GenomeAnimation_Previews: PreviewProvider {
     static var previews: some View {
-        GenomeAnimation(color: .red)
+        GenomeAnimation(primary: .blue, secondary: .green)
     }
 }
 
