@@ -10,7 +10,7 @@ import SwiftUI
 struct GenomeAnimation: View {
     @State private var length: Int = 50
     @State private var width: Double = 50
-    @State private var rotation: Double = 0
+    @State private var blurRadius: CGFloat = 1
     @State private var spacing: Double = 0.5
     var primaryColor: Color = .blue
     var secondaryColor: Color = .red
@@ -22,7 +22,7 @@ struct GenomeAnimation: View {
         GeometryReader { geo in
             ZStack {
                 Group {
-                    DotWave(size: 10, spacing: spacing, width: width, n: length, loops: 5, rotation: 0, flipped: true)
+                    DotWave(size: 18, spacing: spacing, width: width, n: length, loops: 5, rotation: 0, flipped: true)
                         .foregroundColor(primaryColor)
                     DotWave(size: 7, spacing: spacing, width: 50, n: length + 5, loops: 4, rotation: 0, flipped: true)
                         .foregroundColor(primaryColor).brightness(0.2)
@@ -30,9 +30,9 @@ struct GenomeAnimation: View {
                 }
                 
                 Group {
-                    DotWave(size: 3, spacing: spacing, width: width, n: length + 5, loops: 5, rotation: 0)
+                    DotWave(size: 5, spacing: spacing, width: width, n: length + 5, loops: 5, rotation: 0)
                         .foregroundColor(secondaryColor)
-                    DotWave(size: 5, spacing: spacing, width: 50, n: length + 10, loops: 6, rotation: 0)
+                    DotWave(size: 10, spacing: spacing, width: 50, n: length + 10, loops: 6, rotation: 0)
                         .foregroundColor(secondaryColor).brightness(0.2)
                     DotWave(size: 6, spacing: spacing, width: 50, n: length + 12, loops: 5, rotation: 0)
                         .foregroundColor(secondaryColor).brightness(0.5)
@@ -100,3 +100,4 @@ func genArray(_ n: Int) -> Array<Int> {
     }
     return f
 }
+
