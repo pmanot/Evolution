@@ -111,7 +111,7 @@ struct Species: Identifiable, Hashable {
         arr.removeAll(where: { $0.id == self.id })
     }
     mutating func avoidBounds() { // bounds collision function to prevent cells from going out of bound
-        if coordinates.x <= bounds.left || coordinates.x >= bounds.right || coordinates.y >= bounds.down || coordinates.y <= bounds.up {
+        if coordinates.x < bounds.left || coordinates.x > bounds.right || coordinates.y > bounds.down || coordinates.y < bounds.up {
             coordinates.x.cap(bounds.left..<bounds.right)
             coordinates.y.cap(bounds.up..<bounds.down)
             dir = CGFloat.random(in: 0..<2*(.pi))
@@ -189,7 +189,7 @@ struct Point: Hashable, Strideable { // Custom CGPoint struct that conforms to H
     func distance(to other: Point) -> CGFloat { // calculates the distance between two points
         let delta_x2 = Double(self.x - other.x)*Double(self.x - other.x)
         let delta_y2 = Double(self.y - other.y)*Double(self.y - other.y)
-        return CGFloat(sqrt(delta_x2 + delta_y2))
+        return CGFloat((delta_x2 + delta_y2).squareRoot())
     }
     
     func advanced(by n: CGFloat) -> Point {

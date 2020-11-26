@@ -14,6 +14,7 @@ struct EnvironmentView: View {
             FoodView()
                 .environmentObject(env)
         }
+        
     }
 }
 

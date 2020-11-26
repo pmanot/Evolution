@@ -9,11 +9,11 @@ import SwiftUI
 
 @main
 struct evolutionApp: App {
-    var environment = SpeciesEnvironment()
+    var env = SpeciesEnvironment()
     var body: some Scene {
         WindowGroup {
             MainUI()
-                .environmentObject(environment)
+                .environmentObject(env)
         }
     }
 }

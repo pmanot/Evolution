@@ -14,6 +14,12 @@ struct CreateSpecies: View {
     @EnvironmentObject var env: SpeciesEnvironment
     @Environment(\.presentationMode) var showing
     @Environment(\.colorScheme) var colorScheme
+    init() {
+        UISegmentedControl.appearance().selectedSegmentTintColor = UIColor(.darkblueGray)
+        UISegmentedControl.appearance().setTitleTextAttributes([.foregroundColor: UIColor(.lightTurquoise)], for: .selected)
+        UISegmentedControl.appearance().setTitleTextAttributes([.foregroundColor: UIColor(.darkblueGray)], for: .normal)
+
+    }
     var body: some View {
         ZStack {
             VStack {
@@ -135,7 +141,12 @@ struct CreateSpecies: View {
             }
         }
         .frame(height: 700)
-        .background(GenomeAnimation(color: speciesDNA[selection].color).opacity(0.2).offset(x: -80))
+        .background(
+            GenomeAnimation(primary: speciesDNA[selection].color, secondary: speciesDNA[1 - selection].color)
+                .opacity(0.4)
+                .offset(x: -100)
+                .animation(.easeIn(duration: 0.3))
+        )
         .onAppear {
             if env.baseDNA.count == 2 {
                 speciesDNA = env.baseDNA

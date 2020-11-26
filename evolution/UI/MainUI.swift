@@ -10,57 +10,36 @@ import SwiftUICharts
 
 struct MainUI: View {
     @State var createSpeciesView: Bool = false
-    @State var birthCount: Int = 0
-    @State var deathCount: Int = 0
-    @State private var deathArray: [Double] = []
     @State private var populationArrayA: [Double] = [0]
     @State private var populationArrayB: [Double] = [0]
-    @State private var birthArray: [Double] = []
-    @State var maxPopulationSize = 20
+    @State private var totalPopulation: [Double] = [0]
     @State private var deathAnimationloop = counter(50)
-    @State private var timerLoop = counter(10)
     @State private var foodLoop = counter(1000)
     @State private var updatePopulationLoop = counter(100)
     @State private var resetDay = false
     @State private var foodAmount = 15
-    @State var delayCount: Int = 10
+    @State private var delayCount: Double = 2
+    @State private var speciesColorGradients: [GradientColor] = [GradientColors.orngPink, GradientColors.bluPurpl]
     @EnvironmentObject var env: SpeciesEnvironment
     @Environment(\.colorScheme) var colorScheme
-    @State private var timer = Timer.publish(every: 0.01, on: .main, in: .common).autoconnect()
+    @State private var timer = Timer.publish(every: 0.01, on: .current, in: .common).autoconnect()
     @State private var paused = false
     var body: some View {
         GeometryReader { geo in
             ZStack {
-                if colorScheme == .light {
-                    Image("dot-matrix")
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .clipShape(Rectangle())
-                        .frame(width: geo.size.width, height: geo.size.height)
-                        .ignoresSafeArea(.all)
-                }
-                else {
-                    Image("dot-matrix")
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .clipShape(Rectangle())
-                        .frame(width: geo.size.width, height: geo.size.height)
-                        .ignoresSafeArea(.all)
-                        .colorInvert()
-                        .overlay(Color.lightBlueGray.opacity(0.15))
-                        .ignoresSafeArea(.all)
-                }
-                
+                DotMatrix(Int(geo.size.width), Int(geo.size.height))
+                    .foregroundColor(.mediumPurple)
+                    .edgesIgnoringSafeArea(.all)
                 VStack(alignment: .leading) {
-                    MultiLineChartView(data: [(populationArrayA, GradientColors.bluPurpl), (populationArrayB, GradientColors.orngPink)], title: "Population data", legend: "\(env.baseDNA.first?.identifier ?? ""): \(Int(populationArrayA.last ?? 0))   \(env.baseDNA.last?.identifier ?? ""): \(Int(populationArrayB.last ?? 0))", form: ChartForm.wide)
+                    MultiLineChartView(data: [(populationArrayA, speciesColorGradients[0]), (populationArrayB, speciesColorGradients[1]), (totalPopulation, GradientColors.green)], title: "Population data", legend: "\(env.baseDNA.first?.identifier ?? ""): \(Int(populationArrayA.last ?? 0))   \(env.baseDNA.last?.identifier ?? ""): \(Int(populationArrayB.last ?? 0))", form: ChartForm.wide)
                         .overlay(Color.blueGreen.opacity(0.1))
                         .clipShape(RoundedRectangle(cornerRadius: 20))
                         .overlay(RoundedRectangle(cornerRadius: 20).strokeBorder(Color.lightBlueGreen, lineWidth: 2))
                         .scaleEffect(CGSize(width: 0.6, height: 0.6), anchor: .center)
                         .frame(width: 200, height: 150)
-                        .animation(.default)
                 }
-                .animation(.default)
+                .frame(width: geo.size.width/100, height: geo.size.height/100)
+                .animation(.linear)
                 .position(x: geo.size.width - 130, y: 70)
                 
                 ZStack {
@@ -82,7 +61,7 @@ struct MainUI: View {
                                 self.paused.toggle()
                             }
                             if paused {
-                                self.timer.upstream.connect().cancel()
+                                timer.upstream.pause()
                             }
                             else {
                                 self.timer = Timer.publish(every: 0.01, on: .main, in: .common).autoconnect()
@@ -106,19 +85,19 @@ struct MainUI: View {
                             .fontWeight(.light)
                             .foregroundColor(.darkblueGray)
                     }
-                    .buttonStyle(FunctionalButton())
+                    .buttonStyle(FunctionalButtonStyle())
                     
                     Button(action: {
                         env.alive = []
                         env.food = []
-                        populationArrayA = []; populationArrayB = []; birthCount = 0; deathCount = 0
+                        populationArrayA = [0]; populationArrayB = [0]; totalPopulation = [0]
                     }){
                         Text("reset")
                             .font(.caption2)
                             .fontWeight(.light)
                             .foregroundColor(.darkblueGray)
                     }
-                    .buttonStyle(FunctionalButton())
+                    .buttonStyle(FunctionalButtonStyle())
                     
                     Button(action: {
                         for dna in env.baseDNA {
@@ -137,13 +116,16 @@ struct MainUI: View {
                                 .padding(.vertical, 2)
                         }
                     }
-                    .buttonStyle(FunctionalButton(25))
+                    .buttonStyle(FunctionalButtonStyle(25))
                 }
                 .position(x: geo.size.width - 80, y: (geo.size.height - geo.size.width/2) - 253)
                 
                 HStack {
                     Group {
-                        Button(action: delayCount > 1 ? {delayCount = Int(Double(delayCount)*1.5); timerLoop = counter(delayCount)} : {delayCount = 2}){
+                        Button(action: {
+                            delayCount = (delayCount*1.2).capped(1..<3)
+                            self.timer = Timer.publish(every: 0.005 * delayCount, on: .main, in: .common).autoconnect()
+                        }){
                             Image(systemName: "chevron.left.circle.fill")
                                 .resizable()
                                 .aspectRatio(contentMode: .fit)
@@ -154,7 +136,10 @@ struct MainUI: View {
                                 .clipShape(Circle())
                         }
                         .buttonStyle(PlainButtonStyle())
-                        Button(action: delayCount > 1 ? {delayCount = Int(Double(delayCount)/1.5); timerLoop = counter(delayCount)} : {delayCount = 1; timerLoop = counter(delayCount)}){
+                        Button(action: {
+                            delayCount = delayCount/1.2.capped(1..<3)
+                            self.timer = Timer.publish(every: 0.005 * delayCount, on: .main, in: .common).autoconnect()
+                        }){
                             Image(systemName: "chevron.right.circle.fill")
                                 .resizable()
                                 .aspectRatio(contentMode: .fit)
@@ -179,83 +164,85 @@ struct MainUI: View {
                 }
                 .position(x: geo.size.width - 250, y: (geo.size.height - geo.size.width/2) - 200)
                 
-                ZStack {
+                ZStack(alignment: .topLeading) {
                     (colorScheme == .dark ? Color.mediumPurple : Color.coralPink)
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                         .overlay(RoundedRectangle(cornerRadius: 9).stroke(colorScheme == .dark ? Color.darkBlueGreen : Color.pink, lineWidth: 2))
-                        .frame(width: geo.size.width - 10, height: geo.size.width - 10, alignment: .center)
-                        .position(x: geo.size.width/2, y: geo.size.height - 188)
                         .opacity(0.7)
                     EnvironmentView()
                     ForEach(env.alive, id: \.id) { s in
                         Cell(s)
-                            .transition(.asymmetric(insertion: .bright, removal: .identity))
                     }
+                    .transition(.bright)
                 }
+                .frame(width: geo.size.width - 10, height: geo.size.width - 10, alignment: .center)
+                .position(x: geo.size.width/2, y: geo.size.height - 188)
                 .onAppear {
-                    env.bounds = Bounds(frame: CGSize(width: geo.size.width - 40, height: geo.size.width - 40), position: CGPoint(x: geo.size.width/2, y: geo.size.height - 188))
-                    print(env.bounds)
+                    env.bounds = Bounds(left: 30, right: geo.size.width - 30, up: 30, down: geo.size.width - 30)
                 }
             }
+            .frame(width: geo.size.width, height: geo.size.height)
         }
         .onReceive(timer){ _ in
-            timerLoop {
-                for n in 0..<env.alive.count {
-                    if resetDay {
-                        env.alive[n].dayReset()
-                    }
-                    
-                    withinLimit(n, env.alive.count) { // make sure alive[n] is a valid index (sometimes n goes out of bounds while running due to glitchy behaviour with ForEach).
-                        env.alive[n].updatePos() //update position on-screen
-                        
-                        if env.alive.count < maxPopulationSize { // making sure new births only happen if the population is lower than its peak
-                            if env.alive[n].foodEnergy.count >= 1 {
-                                rate(0.002) { // 0.005 chance of birth per cell every 0.01 seconds, which is approximately 0.5 per second or 50 %
-                                    env.alive[n].foodEnergy.removeFirst()
-                                    env.alive[n].replicate(&env.alive)
-                                     //adding the offspring to the array of all currently env.alive species
-                                    birthCount += 1 //increase birthCount
-                                }
+            for n in 0..<env.alive.count {
+                if resetDay {
+                    env.alive[n].dayReset()
+                }
+                withinLimit(n, env.alive.count) { // make sure alive[n] is a valid index (sometimes n goes out of bounds while running due to glitchy behaviour with ForEach).
+                    env.alive[n].updatePos() //update position on-screen
+                        if env.alive[n].foodEnergy.count >= 1 {
+                            rate(0.002) { // 0.005 chance of birth per cell every 0.01 seconds, which is approximately 0.5 per second or 50 %
+                                env.alive[n].foodEnergy.removeFirst()
+                                env.alive[n].replicate(&env.alive)
+                                 //adding the offspring to the array of all currently env.alive species
                             }
                         }
-                        env.alive[n].eatFood(&env.food)
-                        env.alive[n].onDeath {
-                            let dead = env.alive[n]
-                            delay(0.5){
-                                env.makeFood(d: dead)
-                            }
+                    env.alive[n].onDeath {
+                        let dead = env.alive[n]
+                        delay(0.2){
+                            env.makeFood(d: dead)
                         }
                     }
+                    env.alive[n].eatFood(&env.food)
                 }
-                resetDay = false
+            }
+            resetDay = false
                 
-                updatePopulationLoop {
-                    if env.baseDNA.count == 2 {
-                        if populationArrayA.last != Double(env.alive.filter {$0.identifier == env.baseDNA[0].identifier}.count) {
-                            populationArrayA.append(Double(env.alive.filter {$0.identifier == env.baseDNA[0].identifier}.count))
-                        }
-                        if populationArrayB.last != Double(env.alive.filter {$0.identifier == env.baseDNA[1].identifier}.count) {
-                            populationArrayB.append(Double(env.alive.filter {$0.identifier == env.baseDNA[1].identifier}.count))
-                        }
+            updatePopulationLoop {
+                if env.baseDNA.count == 2 {
+                    if populationArrayA.last != Double(env.alive.filter {$0.identifier == env.baseDNA[0].identifier}.count) {
+                        populationArrayA.append(Double(env.alive.filter {$0.identifier == env.baseDNA[0].identifier}.count))
                     }
-                    updatePopulationLoop = counter(5)
+                    if populationArrayB.last != Double(env.alive.filter {$0.identifier == env.baseDNA[1].identifier}.count) {
+                        populationArrayB.append(Double(env.alive.filter {$0.identifier == env.baseDNA[1].identifier}.count))
+                    }
+                    if totalPopulation.last != Double(env.alive.count) {
+                        totalPopulation.append(Double(env.alive.count))
+                    }
                 }
-                
-                foodLoop {
-                    env.fetchFood(min: foodAmount, max: foodAmount + 5)
-                    foodLoop = counter(1000)
-                    resetDay = true
-                }
-                
-                timerLoop = counter(delayCount)
+                updatePopulationLoop = counter(5)
+            }
+            
+            foodLoop {
+                env.fetchFood(min: foodAmount, max: foodAmount + 5)
+                foodLoop = counter(1000)
+                resetDay = true
             }
         }
         .fullScreenCover(isPresented: $createSpeciesView){
             CreateSpecies()
                 .onAppear {
-                    paused.toggle()
+                    paused = true
+                    self.timer.upstream.connect().cancel()
+                }
+                .onDisappear {
+                    paused = false
+                    self.timer = Timer.publish(every: 0.01, on: .main, in: .common).autoconnect()
+                    self.speciesColorGradients = [GradientColor(start: env.baseDNA.first!.color, end: env.baseDNA.first!.color), GradientColor(start: env.baseDNA.last!.color, end: env.baseDNA.last!.color)]
+                    
                 }
         }
+        
     }
 }
 
@@ -280,4 +267,9 @@ func allEven(_ x: Int) -> IndexSet {
     return IndexSet(evenNumbers)
 }
 
+extension Timer.TimerPublisher {
+    func pause() {
+        self.connect().cancel()
+    }
+}
 
