@@ -29,8 +29,8 @@ struct Species: Identifiable, Hashable {
     var bounds: Bounds // boundaries to stop self from going out of given frame
     // var infected: Bool = false // coming soon
     var dir = CGFloat.random(in: 0..<2*(.pi)) //direction in radians
-    var sightRadius: CGFloat
-    init(name: String, speed: Int, lifespan: Double, sight: CGFloat = 5, infected: Bool = false, coordinates: Point = Point(x: 200, y: 300), bounds: Bounds = SpeciesEnvironment().bounds, color: Color = .green) {
+    var sightRadius: Double
+    init(name: String, speed: Int, lifespan: Double, sight: Double = 5, infected: Bool = false, coordinates: Point = Point(x: 200, y: 300), bounds: Bounds = SpeciesEnvironment().bounds, color: Color = .green) {
         self.identifier = name
         self.speed = speed
         self.lifespan = lifespan
@@ -122,7 +122,7 @@ struct Species: Identifiable, Hashable {
     mutating func forage(_ food: [Food]) {
         for f in 0..<food.count {
             withinLimit(f, food.count) { // make sure f is a valid index
-                if self.coordinates.inRange(of: food[f].position, radius: 40) {
+                if self.coordinates.inRange(of: food[f].position, radiusSquared: 40) {
                     self.dir = abs(atan((self.coordinates.x - food[f].position.x)/(food[f].position.y - self.coordinates.y)))
                     self.foodDetected = true
                 }
@@ -133,12 +133,10 @@ struct Species: Identifiable, Hashable {
     mutating func eatFood(_ food: inout [Food]) {
         if !self.foodDetected {
             for f in food {
-                if !(abs(self.coordinates.y - f.position.y) >= 5 + sightRadius) && !(abs(self.coordinates.x - f.position.x) >= 5 + sightRadius) {
-                    if self.coordinates.inRange(of: f.position, radius: 5 + sightRadius) {
-                        self.foodEnergy.append(f)
-                        food.removeAll(where: {$0.id == f.id})
-                        self.foodDetected = false
-                    }
+                if self.coordinates.inRange(of: f.position, radiusSquared: self.sightRadius) {
+                    self.foodEnergy.append(f)
+                    food.removeAll(where: {$0.id == f.id})
+                    self.foodDetected = false
                 }
             }
         }
@@ -151,6 +149,20 @@ struct Species: Identifiable, Hashable {
     }
 }
 
+struct SpeciesDNA: Hashable {
+    var identifier: String
+    var speed: Int
+    var sight: Double
+    var size: Int
+    var color: Color
+    init(_ identifier: String, speed: Int, sight: Double, size: Int, color: Color){
+        self.identifier = identifier
+        self.speed = speed
+        self.sight = sight
+        self.size = size
+        self.color = color
+    }
+}
 
 struct Food: Identifiable, Hashable {
     var id = UUID()
@@ -186,10 +198,16 @@ struct Bounds: Hashable { // used to define the boundaries of a frame
 struct Point: Hashable, Strideable { // Custom CGPoint struct that conforms to Hashable and Strideable
     var x: CGFloat
     var y: CGFloat
+    func distanceSquared(to other: Point) -> Double { // calculates the distance between two points
+        let delta_x2 = Double(self.x - other.x).magnitudeSquared
+        let delta_y2 = Double(self.y - other.y).magnitudeSquared
+        return (delta_x2 + delta_y2)
+    }
+    
     func distance(to other: Point) -> CGFloat { // calculates the distance between two points
-        let delta_x2 = Double(self.x - other.x)*Double(self.x - other.x)
-        let delta_y2 = Double(self.y - other.y)*Double(self.y - other.y)
-        return CGFloat((delta_x2 + delta_y2).squareRoot())
+        let delta_x2 = Double(self.x - other.x).magnitudeSquared
+        let delta_y2 = Double(self.y - other.y).magnitudeSquared
+        return CGFloat((delta_x2 + delta_y2)).squareRoot()
     }
     
     func advanced(by n: CGFloat) -> Point {
@@ -206,23 +224,11 @@ struct Point: Hashable, Strideable { // Custom CGPoint struct that conforms to H
         return Double(self.y) == Double(self.x)*l.m + l.c
     }
     
-    func inRange(of point: Point, radius: CGFloat = 5) -> Bool { // used to detect a collision / touch between two objects
-        self.distance(to: point) <= radius
-    }
-}
-
-struct SpeciesDNA: Hashable {
-    var identifier: String
-    var speed: Int
-    var sight: CGFloat
-    var size: Int
-    var color: Color
-    init(_ identifier: String, speed: Int, sight: CGFloat, size: Int, color: Color){
-        self.identifier = identifier
-        self.speed = speed
-        self.sight = sight
-        self.size = size
-        self.color = color
+    func inRange(of point: Point, radiusSquared: Double = 25) -> Bool { // used to detect a collision / touch between two objects
+        if !(Double(abs(self.y - point.y)) >= radiusSquared) && !(Double(abs(self.y - point.y)) >= radiusSquared) {
+            return self.distanceSquared(to: point) <= radiusSquared
+        }
+        return false
     }
 }
 
