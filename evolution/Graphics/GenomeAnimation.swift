@@ -83,6 +83,7 @@ struct DotWave: View {
             VStack(alignment: .center, spacing: CGFloat(spacing)) {
                 ForEach(0..<length, id: \.self) { n in
                     Circle()
+                        .strokeBorder(lineWidth: 1.2, antialiased: true)
                         .frame(width: circleSize, height: circleSize, alignment: .center)
                         .offset(x: (flipped ? 1 : -1) * sin(CGFloat(Double(n).mappedValue(inputRange: 0..<Double(length), outputRange: -loops*Double.pi..<loops*Double.pi))) * CGFloat(rotation.mappedValue(inputRange: 0..<360, outputRange: -width..<width)))
                 }

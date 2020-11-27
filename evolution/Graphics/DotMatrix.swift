@@ -15,20 +15,18 @@ struct DotMatrix: View {
         self.width = width/20
     }
     var body: some View {
-        GeometryReader { _ in
-            VStack(spacing: 0) {
-                ForEach(0..<height, id: \.self){ n in
-                    HStack(spacing: 0) {
-                        ForEach(0..<width, id: \.self){ n in
-                            Circle()
-                                .frame(width: 1.5, height: 1.5)
-                                .padding(13.5)
-                        }
+        VStack(spacing: 0) {
+            ForEach(0..<height, id: \.self){ n in
+                HStack(spacing: 0) {
+                    ForEach(0..<width, id: \.self){ n in
+                        Circle()
+                            .frame(width: 1.5, height: 1.5)
+                            .frame(width: 30, height: 30)
                     }
                 }
             }
-            .drawingGroup()
         }
+        .drawingGroup()
     }
 }
 
