@@ -27,9 +27,6 @@ struct MainUI: View {
     var body: some View {
         GeometryReader { geo in
             ZStack {
-                DotMatrix(Int(geo.size.width), Int(geo.size.height))
-                    .foregroundColor(.mediumPurple)
-                    .edgesIgnoringSafeArea(.all)
                 VStack(alignment: .leading) {
                     MultiLineChartView(data: [(populationArrayA, speciesColorGradients[0]), (populationArrayB, speciesColorGradients[1]), (totalPopulation, GradientColors.green)], title: "Population data", legend: "\(env.baseDNA.first?.identifier ?? ""): \(Int(populationArrayA.last ?? 0))   \(env.baseDNA.last?.identifier ?? ""): \(Int(populationArrayB.last ?? 0))", form: ChartForm.wide)
                         .overlay(Color.blueGreen.opacity(0.1))
@@ -182,6 +179,10 @@ struct MainUI: View {
                 }
             }
             .frame(width: geo.size.width, height: geo.size.height)
+            .background(DotMatrix(Int(geo.size.width), Int(geo.size.height))
+                            .position(x: geo.size.width/2, y: geo.size.height/2)
+                            .foregroundColor(.lightBlueGray)
+                            .edgesIgnoringSafeArea(.all))
         }
         .onReceive(timer){ _ in
             for n in 0..<env.alive.count {
@@ -239,7 +240,7 @@ struct MainUI: View {
                     paused = false
                     self.timer = Timer.publish(every: 0.01, on: .main, in: .common).autoconnect()
                     self.speciesColorGradients = [GradientColor(start: env.baseDNA.first!.color, end: env.baseDNA.first!.color), GradientColor(start: env.baseDNA.last!.color, end: env.baseDNA.last!.color)]
-                    
+                    print(env.baseDNA[0].sight)
                 }
         }
         
