@@ -88,10 +88,6 @@ extension Point { // converts point to CGPoint
     }
 }
 
-func color(_ r: Double, _ g: Double, _ b: Double) -> Color {
-    Color(red: r/255, green: g/255, blue: b/255)
-}
-
 func counter(_ initialCount: Int) -> (() -> Void) -> () {
     var i = initialCount
     func countDown(_ x: () -> Void) -> () {
@@ -103,6 +99,10 @@ func counter(_ initialCount: Int) -> (() -> Void) -> () {
     return countDown
 }
 
+//Color
+func color(_ r: Double, _ g: Double, _ b: Double) -> Color {
+    Color(red: r/255, green: g/255, blue: b/255)
+}
 
 extension Color {
     static let primaryText = color(42, 47, 65)
@@ -127,6 +127,37 @@ extension Color {
     static let background = color(247, 253, 253)
     static let darkJungleGreen = color(21, 86, 86)
     static let lightTurquoise = color(162, 233, 233)
+}
+
+extension Color {
+    var components: (red: CGFloat, green: CGFloat, blue: CGFloat, opacity: CGFloat) {
+
+        #if canImport(UIKit)
+        typealias NativeColor = UIColor
+        #elseif canImport(AppKit)
+        typealias NativeColor = NSColor
+        #endif
+
+        var r: CGFloat = 0
+        var g: CGFloat = 0
+        var b: CGFloat = 0
+        var o: CGFloat = 0
+
+        guard NativeColor(self).getRed(&r, green: &g, blue: &b, alpha: &o) else {
+            // You can handle the failure here as you want
+            return (0, 0, 0, 0)
+        }
+
+        return (r, g, b, o)
+    }
+    
+    func darken(_ n: Double, r: Double = 1, g: Double = 1, b: Double = 1) -> Color {
+        Color(red: Double(self.components.red)/((n+1)*r), green: Double(self.components.green)/((n+1)*g), blue: Double(self.components.blue)/((n+1)*b), opacity: Double(self.components.opacity))
+    }
+    
+    func lighten(_ n: Double) -> Color {
+        Color(red: Double(self.components.red)/n, green: Double(self.components.green)/n, blue: Double(self.components.blue)/n, opacity: Double(self.components.opacity))
+    }
 }
 
 extension Array where Element == Species {
