@@ -44,7 +44,7 @@ public final class SpeciesEnvironment: ObservableObject { // the environment for
         }
     }
     func gen(coordinates: Point, lifespan: Double = Double.random(in: 100..<1000)) { // generates a species with random traits
-        alive.append(Species(name: "M", speed: Int.random(in: 0..<10), lifespan: lifespan, sight: Double.random(in: 1..<5), coordinates: coordinates, bounds: bounds))
+        alive.append(Species(name: "M", speed: Int.random(in: 0..<10), lifespan: lifespan, sight: CGFloat.random(in: 1..<5), coordinates: coordinates, bounds: bounds))
     }
     
     func offspring(_ a: Species, b: Species) { // when two species love each other very very much...
@@ -79,7 +79,7 @@ public final class SpeciesEnvironment: ObservableObject { // the environment for
 }
 
 func gen(_ name: String = "M", lifespan: Double = Double.random(in: 100..<1000), coordinates: Point = randomPoint(bounds: SpeciesEnvironment().bounds)) -> Species { // generates a species with random traits
-    Species(name: name, speed: Int(Double.random(in: 0..<10)), lifespan: lifespan, sight: Double.random(in: 1..<5), coordinates: coordinates, bounds: SpeciesEnvironment().bounds)
+    Species(name: name, speed: Int(Double.random(in: 0..<10)), lifespan: lifespan, sight: CGFloat.random(in: 1..<5), coordinates: coordinates, bounds: SpeciesEnvironment().bounds)
 }
 
 func midPoint(_ a: Point, _ b: Point) -> Point {
@@ -104,7 +104,7 @@ enum Energy: Int {
 }
 
 func gen(coordinates: Point, _ bounds: Bounds) -> Species {
-    return Species(name: "M", speed: Int.random(in: 0..<10), lifespan: Double.random(in: 100..<200), sight: Double.random(in: 1..<10), coordinates: coordinates, bounds: bounds)
+    return Species(name: "M", speed: Int.random(in: 0..<10), lifespan: Double.random(in: 100..<200), sight: CGFloat.random(in: 1..<10), coordinates: coordinates, bounds: bounds)
 }
 
 func rate(_ x: Double, _ m: () -> ()) { // function that executes a closure based on a given chance
