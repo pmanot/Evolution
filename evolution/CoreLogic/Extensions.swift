@@ -178,7 +178,12 @@ func merge(_ c: [Color]) -> Color {
 
 
 extension Array where Element == Species {
-    mutating func remove(id: UUID){
-        self.removeAll {$0.id == id}
+    mutating func remove(id: UUID, _ action: () -> ()){
+        if self.contains(where: { $0.id == id }) {
+            do {
+                action()
+            }
+            self.removeAll(where: {$0.id == id})
+        }
     }
 }
