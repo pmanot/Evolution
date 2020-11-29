@@ -115,9 +115,6 @@ extension Color {
     static let lightBlueGreen = color(178, 236, 235)
     static let mediumPurple = color(147, 129, 255)
     static let lavender = color(201, 191, 255)
-    static let darkBlue = color(91, 62, 255)
-    static let mildYellow = color(236, 221, 123)
-    static let lightYellow = color(241, 230, 159)
     static let umber = color(104, 83, 77)
     static let taupe = color(116, 92, 86)
     static let lightSalmon = color(255, 166, 134)
@@ -127,10 +124,12 @@ extension Color {
     static let background = color(247, 253, 253)
     static let darkJungleGreen = color(21, 86, 86)
     static let lightTurquoise = color(162, 233, 233)
+    static let lightGreen = color(162, 193, 116)
+    static let tropicGreen = color(100, 150, 108)
 }
 
 extension Color {
-    var components: (red: CGFloat, green: CGFloat, blue: CGFloat, opacity: CGFloat) {
+    var components: (red: Double, green: Double, blue: Double, opacity: Double) {
 
         #if canImport(UIKit)
         typealias NativeColor = UIColor
@@ -148,7 +147,7 @@ extension Color {
             return (0, 0, 0, 0)
         }
 
-        return (r, g, b, o)
+        return (Double(r), Double(g), Double(b), Double(o))
     }
     
     func darken(_ n: Double, r: Double = 1, g: Double = 1, b: Double = 1) -> Color {
@@ -158,7 +157,25 @@ extension Color {
     func lighten(_ n: Double) -> Color {
         Color(red: Double(self.components.red)/n, green: Double(self.components.green)/n, blue: Double(self.components.blue)/n, opacity: Double(self.components.opacity))
     }
+    
+    func merge(_ c: Color) -> Color {
+        return Color(red: (c.components.red + self.components.red)/2, green: (c.components.green + self.components.green)/2, blue: (c.components.blue + self.components.blue)/2, opacity: 1)
+    }
+    
 }
+
+func merge(_ x: Color, _ c: Color) -> Color {
+    return Color(red: (c.components.red + x.components.red)/2, green: (c.components.green + x.components.green)/2, blue: (c.components.blue + x.components.blue)/2, opacity: 1)
+}
+
+func merge(_ c: Color...) -> Color {
+    Color(red: c.map {$0.components.red}.reduce(0, +)/Double(c.count), green: c.map {$0.components.green}.reduce(0, +)/Double(c.count), blue: c.map {$0.components.blue}.reduce(0, +)/Double(c.count))
+}
+
+func merge(_ c: [Color]) -> Color {
+    Color(red: c.map {$0.components.red}.reduce(0, +)/Double(c.count), green: c.map {$0.components.green}.reduce(0, +)/Double(c.count), blue: c.map {$0.components.blue}.reduce(0, +)/Double(c.count))
+}
+
 
 extension Array where Element == Species {
     mutating func remove(id: UUID){
