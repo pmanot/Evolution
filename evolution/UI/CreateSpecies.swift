@@ -8,40 +8,59 @@
 import SwiftUI
 
 struct CreateSpecies: View {
-    @State var speciesDNA = [SpeciesDNA("Blue", speed: 5, sight: 4, size: 1, color: Color.blue), SpeciesDNA("Red", speed: 6, sight: 6, size: 1, color: Color.red)]
+    @State var speciesDNA = [SpeciesDNA("X", speed: 5, sight: 41, size: 1, color: Color.blue), SpeciesDNA("M", speed: 6, sight: 61, size: 1, color: Color.red)]
     @State private var selection: Int = 0
     @State private var n: Int = 5
     @EnvironmentObject var env: SpeciesEnvironment
     @Environment(\.presentationMode) var showing
     @Environment(\.colorScheme) var colorScheme
     init() {
-        UISegmentedControl.appearance().selectedSegmentTintColor = .black
-        UISegmentedControl.appearance().setTitleTextAttributes([.foregroundColor: UIColor.white], for: .selected)
-        UISegmentedControl.appearance().setTitleTextAttributes([.foregroundColor: UIColor.white], for: .normal)
+        UISegmentedControl.appearance().selectedSegmentTintColor = colorScheme == .dark ? UIColor.black : UIColor.white
+        UISegmentedControl.appearance().setTitleTextAttributes([.foregroundColor: colorScheme == .dark ? UIColor.white : UIColor.black], for: .selected)
+        UISegmentedControl.appearance().setTitleTextAttributes([.foregroundColor: colorScheme == .dark ? UIColor.white : UIColor.black], for: .normal)
 
     }
     var body: some View {
         ZStack {
+            if (colorScheme == .light) {
+                Color.gray
+                    .brightness(0.2)
+                    .opacity(0.5)
+                    .clipShape(RoundedRectangle(cornerRadius: 25.0))
+                    .frame(width: 350, height: 550)
+            }
             RoundedRectangle(cornerRadius: 25.0)
-                .strokeBorder(lineWidth: 2)
+                .strokeBorder(Color.gray, lineWidth: 2)
                 .opacity(0.8)
-                .frame(width: 350, height: 550)
+                .frame(width: 370, height: 620)
                 .background(
-                    GenomeAnimation(primary: speciesDNA[selection].color, secondary: speciesDNA[1 - selection].color)
-                        .opacity(0.4)
-                        .offset(x: -100)
-                        .animation(.easeIn(duration: 0.3))
+                    ZStack {
+                        if (colorScheme == .light) {
+                            GenomeAnimation(primary: speciesDNA[selection].color, secondary: Color.black)
+                                .opacity(0.7)
+                                .offset(x: -100)
+                                .animation(.easeIn(duration: 0.3))
+                                .clipShape(RoundedRectangle(cornerRadius: 25.0))
+                        }
+                        else {
+                            GenomeAnimation(primary: speciesDNA[selection].color, secondary: speciesDNA[1 - selection].color)
+                                .opacity(0.5)
+                                .offset(x: -100)
+                                .animation(.easeIn(duration: 0.3))
+                                .clipShape(RoundedRectangle(cornerRadius: 25.0))
+                        }
+                    }
                 )
             VStack {
-                Text("Base Species")
+                Text("DNA")
                     .fontWeight(.heavy)
                     .font(.largeTitle)
+                    .opacity(0.8)
                 ZStack {
-                    RoundedRectangle(cornerRadius: 10)
+                    Capsule().foregroundColor(.black).opacity(0.3)
                         .frame(width: 50, height: 30)
-                        .foregroundColor(.lightBlueGreen).opacity(0.5)
-                    RoundedRectangle(cornerRadius: 10)
-                        .strokeBorder(Color.darkblueGray, lineWidth: 1)
+                    Capsule()
+                        .strokeBorder(Color.black, lineWidth: 0.5)
                         .frame(width: 50, height: 30)
                     TextField("", value: $n, formatter: NumberFormatter())
                         .frame(width: 20)
@@ -49,20 +68,37 @@ struct CreateSpecies: View {
                 Text("Name: ")
                     .font(.callout)
                 Picker("", selection: $selection) {
-                    ForEach(0..<2) { n in
+                    ForEach(0..<2, id: \.self) { n in
                         Text(speciesDNA[n].identifier).tag(n)
                     }
                 }
                 .pickerStyle(SegmentedPickerStyle())
-                .background(speciesDNA[selection].color.opacity(0.4).clipShape(RoundedRectangle(cornerRadius: 7)))
+                .background(
+                    ZStack {
+                        if colorScheme == .light {
+                            Color.black
+                                .opacity(0.1)
+                                .clipShape(RoundedRectangle(cornerRadius: 7))
+                            Color.black
+                                .clipShape(RoundedRectangle(cornerRadius: 7).stroke(lineWidth: 0.2))
+                        }
+                        else {
+                            Color.gray
+                                .opacity(0.1)
+                                .clipShape(RoundedRectangle(cornerRadius: 7))
+                            Color.gray
+                                .clipShape(RoundedRectangle(cornerRadius: 7).stroke(lineWidth: 0.2))
+                        }
+                    }
+                )
                 .frame(width: 200)
                 
                 HStack {
                     ZStack {
-                        Capsule().foregroundColor(.lightBlueGreen).opacity(0.3)
+                        Capsule().foregroundColor(.black).opacity(0.3)
                             .frame(width: 180, height: 35)
                         Capsule()
-                            .strokeBorder(Color.darkblueGray, lineWidth: 1)
+                            .strokeBorder(Color.black, lineWidth: 0.5)
                             .frame(width: 180, height: 35)
                         TextField("Species Identifier...", text: $speciesDNA[selection].identifier)
                             .frame(width: 150)
@@ -72,7 +108,7 @@ struct CreateSpecies: View {
                     }
                     if speciesDNA[0].identifier != speciesDNA[1].identifier {
                         Image(systemName: "checkmark.circle.fill")
-                            .foregroundColor(speciesDNA[selection].color)
+                            .foregroundColor((colorScheme == .light) ? Color.black : speciesDNA[selection].color )
                             .opacity(0.8)
                     }
                     else {
@@ -86,75 +122,124 @@ struct CreateSpecies: View {
                 
                 VStack(alignment: .leading) {
                     Text("Speed: ")
-                        .font(.caption)
+                        .font(.caption2)
                     Picker("", selection: $speciesDNA[selection].speed) {
-                        ForEach(1..<10) { n in
+                        ForEach(1..<10, id: \.self) { n in
                             Text("\(n)").tag(Double(n))
                         }
                     }
                     .pickerStyle(SegmentedPickerStyle())
-                    .background(speciesDNA[selection].color.opacity(0.4).clipShape(RoundedRectangle(cornerRadius: 7)))
+                    .background(
+                        ZStack {
+                            if colorScheme == .light {
+                                Color.black
+                                    .opacity(0.1)
+                                    .clipShape(RoundedRectangle(cornerRadius: 7))
+                                Color.black
+                                    .clipShape(RoundedRectangle(cornerRadius: 7).stroke(lineWidth: 0.2))
+                            }
+                            else {
+                                Color.gray
+                                    .opacity(0.1)
+                                    .clipShape(RoundedRectangle(cornerRadius: 7))
+                                Color.gray
+                                    .clipShape(RoundedRectangle(cornerRadius: 7).stroke(lineWidth: 0.2))
+                            }
+                        }
+                    )
                 }
                 .frame(width: 280)
                 
                 VStack(alignment: .leading) {
                     Text("Sight: ")
-                        .font(.caption)
+                        .font(.caption2)
                     Picker("", selection: $speciesDNA[selection].sight) {
-                        ForEach(1..<10) { n in
+                        ForEach(1..<10, id: \.self) { n in
                             Text("\(n)").tag(Double(n*n + 25))
                         }
                     }
                     .pickerStyle(SegmentedPickerStyle())
-                    .background(speciesDNA[selection].color.opacity(0.4).clipShape(RoundedRectangle(cornerRadius: 7)))
+                    .background(
+                        ZStack {
+                            if colorScheme == .light {
+                                Color.black
+                                    .opacity(0.1)
+                                    .clipShape(RoundedRectangle(cornerRadius: 7))
+                                Color.black
+                                    .clipShape(RoundedRectangle(cornerRadius: 7).stroke(lineWidth: 0.2))
+                            }
+                            else {
+                                Color.gray
+                                    .opacity(0.1)
+                                    .clipShape(RoundedRectangle(cornerRadius: 7))
+                                Color.gray
+                                    .clipShape(RoundedRectangle(cornerRadius: 7).stroke(lineWidth: 0.2))
+                            }
+                        }
+                    )
                 }
                 .frame(width: 280)
                 
                 VStack(alignment: .leading) {
                     Text("Size: ")
-                        .font(.caption)
+                        .font(.caption2)
                     Picker("", selection: $speciesDNA[selection].size) {
-                        ForEach(1..<10) { n in
+                        ForEach(1..<10, id: \.self) { n in
                             Text("\(n)").tag(Double(n))
                         }
                     }
                     .pickerStyle(SegmentedPickerStyle())
-                    .background(speciesDNA[selection].color.opacity(0.4).clipShape(RoundedRectangle(cornerRadius: 7)))
+                    .background(
+                        ZStack {
+                            if colorScheme == .light {
+                                Color.black
+                                    .opacity(0.1)
+                                    .clipShape(RoundedRectangle(cornerRadius: 7))
+                                Color.black
+                                    .clipShape(RoundedRectangle(cornerRadius: 7).stroke(lineWidth: 0.2))
+                            }
+                            else {
+                                Color.gray
+                                    .opacity(0.1)
+                                    .clipShape(RoundedRectangle(cornerRadius: 7))
+                                Color.gray
+                                    .clipShape(RoundedRectangle(cornerRadius: 7).stroke(lineWidth: 0.2))
+                            }
+                        }
+                    )
                 }
                 .frame(width: 280)
                 ColorPicker("", selection: $speciesDNA[selection].color)
                     .padding(.horizontal, 200)
                     .padding(.vertical, 10)
                 Button(action: {
-                    env.baseDNA = []
+                    env.base(speciesDNA[0], speciesDNA[1])
                     loop(n){
-                        env.addSpecies(Species(speciesDNA[0], lifespan: 100, bounds: env.bounds))
-                        env.addSpecies(Species(speciesDNA[1], lifespan: 100, bounds: env.bounds))
+                        env.addSpecies(Species(env.baseDNA[0], lifespan: 100, bounds: env.bounds))
+                        env.addSpecies(Species(env.baseDNA[1], lifespan: 100, bounds: env.bounds))
                     }
                     env.fetchFood(min: 25, max: 30)
-                    env.base(speciesDNA[0])
-                    env.base(speciesDNA[1])
                     showing.wrappedValue.dismiss()
                 }) {
                     ZStack {
                         Capsule()
                             .frame(width: 80, height: 40)
-                            .foregroundColor(.lightBlueGreen)
+                            .foregroundColor(speciesDNA[selection].color)
                             .opacity(0.5)
                         Capsule()
-                            .strokeBorder(Color.darkBlueGreen, lineWidth: 0.5)
+                            .strokeBorder(Color.black, lineWidth: 0.5)
                             .frame(width: 80, height: 40)
 
                         Text("OK")
                             .font(.callout)
-                            .foregroundColor(.darkJungleGreen)
+                            .foregroundColor(.black)
                             .fontWeight(.heavy)
                     }
                 }
+                .buttonStyle(PlainButtonStyle())
             }
         }
-        .animation(.easeIn(duration: 0.75))
-        .frame(height: 700)
+        .animation(.default)
         .onAppear {
             if env.baseDNA.count == 2 {
                 speciesDNA = env.baseDNA
