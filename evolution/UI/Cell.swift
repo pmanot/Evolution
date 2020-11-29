@@ -11,7 +11,6 @@ struct Cell: View {
     var some_species: Species
     @EnvironmentObject var env: SpeciesEnvironment
     @Environment(\.colorScheme) var colorScheme
-    @State private var showInfo: Bool = false
     var size: CGSize
     init(_ species: Species, size: CGSize = CGSize(width: 20, height: 20)) {
         some_species = species
@@ -37,84 +36,10 @@ struct Cell: View {
                 .clipShape(Circle())
                 .overlay(Circle().strokeBorder(lineWidth: 0.5, antialiased: true).foregroundColor(.black))
                 .frame(width: 8, height: 8)
-            if showInfo {
-                Group {
-                    Circle()
-                        .strokeBorder(lineWidth: 2)
-                    Circle()
-                        .opacity(0.2)
-                }
-                .foregroundColor(.black)
-                .frame(width: some_species.foodEnergy.count >= 1 ? size.width*1.2 : size.width, height: some_species.foodEnergy.count >= 1 ? size.height*1.2 : size.height)
-                .transition(AnyTransition.opacity.animation(.linear(duration: 0.1)))
-                
-                VStack(spacing: 0) {
-                    ZStack {
-                        Group {
-                            RoundedRectangle(cornerRadius: 10)
-                                .strokeBorder(lineWidth: 3, antialiased: true)
-                            RoundedRectangle(cornerRadius: 10)
-                                .foregroundColor(colorScheme == .light ? Color.gray : Color.black)
-                                .opacity(0.3)
-                        }
-                        .frame(width: 120, height: 50)
-                        .foregroundColor(.black)
-                        .shadow(radius: 3)
-                        
-                        VStack(alignment: .leading) {
-                            HStack {
-                                Text("\(env.baseDNA[0].identifier): \(Int((some_species.genome.percentageComposition.values.first ?? 0)*100)) %")
-                                    .font(.caption2)
-                                    .fontWeight(.bold)
-                                    .padding(2)
-                                if env.baseDNA.count >= 2 {
-                                    ZStack {
-                                        env.baseDNA[0].color
-                                            .clipShape(Circle())
-                                            .frame(width: 15, height: 15)
-                                        Circle()
-                                            .stroke(lineWidth: 0.5)
-                                            .foregroundColor(.black)
-                                            .frame(width: 15, height: 15)
-                                    }
-                                }
-                            }
-                            HStack {
-                                Text("\(env.baseDNA[1].identifier): \(Int((some_species.genome.percentageComposition.values.map {$0}.last ?? 0)*100)) %")
-                                    .font(.caption2)
-                                    .fontWeight(.bold)
-                                    .padding(2)
-                                if env.baseDNA.count >= 2 {
-                                    ZStack {
-                                        env.baseDNA[1].color
-                                            .clipShape(Circle())
-                                            .frame(width: 15, height: 15)
-                                        Circle()
-                                            .stroke(lineWidth: 0.5)
-                                            .foregroundColor(.black)
-                                            .frame(width: 15, height: 15)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    .offset(x: some_species.coordinates.x <= (env.bounds.left + 100) ? 50 : (some_species.coordinates.x >= (env.bounds.right - 100) ? -50 : 0) )
-                    Image(systemName: "arrowtriangle.down.fill")
-                        .resizable()
-                        .frame(width: 10, height: 5)
-                }
-                .offset(y: -50)
-                .transition(AnyTransition.offset(y: -20).combined(with: AnyTransition.scale(scale: 0.4)).combined(with: AnyTransition.opacity))
-            }
             
         }
         .position(some_species.coordinates.cg())
         .animation(.easeInOut(duration: 0.2))
-        .onTapGesture(perform: {
-            withAnimation {
-                showInfo.toggle()
-            }
-        })
     }
 }
 
