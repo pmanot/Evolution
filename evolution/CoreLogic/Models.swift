@@ -110,40 +110,64 @@ struct Species: Identifiable, Hashable {
     func remove(from arr: inout [Species]) {
         arr.removeAll(where: { $0.id == self.id })
     }
+    
     mutating func avoidBounds() { // bounds collision function to prevent cells from going out of bound
         if coordinates.x < bounds.left || coordinates.x > bounds.right || coordinates.y > bounds.down || coordinates.y < bounds.up {
             coordinates.x.cap(bounds.left..<bounds.right)
             coordinates.y.cap(bounds.up..<bounds.down)
             dir = CGFloat.random(in: 0..<2*(.pi))
         }
-        self.foodDetected = false
     }
     
     mutating func forage(_ food: [Food]) {
-        for f in 0..<food.count {
-            withinLimit(f, food.count) { // make sure f is a valid index
-                if self.coordinates.inRange(of: food[f].position, radiusSquared: 40) {
-                    self.dir = abs(atan((self.coordinates.x - food[f].position.x)/(food[f].position.y - self.coordinates.y)))
-                    self.foodDetected = true
+        if self.detectedFoodID == nil {
+            for f in 0..<food.count {
+                withinLimit(f, food.count) { // make sure f is a valid index
+                    if self.coordinates.inRange(of: food[f].position, radiusSquared: self.sightRadius*2) {
+                        let value = atan(abs(food[f].position.y - self.coordinates.y)/abs(self.coordinates.x - food[f].position.x))
+                        if (self.coordinates.x - food[f].position.x) >= 0 && (food[f].position.y - self.coordinates.y) >= 0 { // 1st quadrant works
+                            dir = (.pi) - value
+                            print("A")
+                        }
+                        else if (self.coordinates.x - food[f].position.x) <= 0 && (food[f].position.y - self.coordinates.y) <= 0 { // 3rd quadrant doesn't work
+                            dir = 2*(.pi) - value
+                            print("B")
+                        }
+                        else if (self.coordinates.x - food[f].position.x) >= 0 && (food[f].position.y - self.coordinates.y) <= 0 { // 4th quadrant works
+                            dir = value + (.pi)
+                            print("C")
+                        }
+                        else if (self.coordinates.x - food[f].position.x) <= 0 && (food[f].position.y - self.coordinates.y) >= 0 { // 2nd quadrant works
+                            dir = value
+                            print("D")
+                        }
+                        dir = 2*(.pi) - dir
+                        self.detectedFoodID = food[f].id
+                    }
                 }
             }
         }
     }
 
     mutating func eatFood(_ food: inout [Food]) {
-        if !self.foodDetected {
-            for f in food {
-                if self.coordinates.inRange(of: f.position, radiusSquared: self.sightRadius) {
-                    self.foodEnergy.append(f)
-                    food.removeAll(where: {$0.id == f.id})
-                    self.foodDetected = false
+        if detectedFoodID == nil {
+            forage(food)
+        } else {
+            if food.first(where: {$0.id == detectedFoodID!}) != nil {
+                if abs(food.first(where: {$0.id == detectedFoodID!})!.position.x - self.coordinates.x) <= 5 {
+                    if self.detectedFoodID != nil {
+                        let m = food.first(where: {$0.id == detectedFoodID!})!
+                        food.removeAll(where: {$0.id == detectedFoodID!})
+                        foodEnergy.append(m)
+                    }
+                    self.detectedFoodID = nil
                 }
             }
         }
     }
     
     func replicate(_ speciesArray: inout Array<Species>){
-        var offspring = Species(self.genome[0], lifespan: self.maxLifespan, bounds: self.bounds)
+        var offspring = Species(self.genome, lifespan: self.maxLifespan, bounds: self.bounds)
         offspring.coordinates = self.coordinates
         speciesArray.append(offspring)
     }
