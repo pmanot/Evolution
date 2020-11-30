@@ -119,49 +119,39 @@ struct Species: Identifiable, Hashable {
         }
     }
     
-    mutating func forage(_ food: [Food]) {
-        if self.detectedFoodID == nil {
-            for f in 0..<food.count {
-                withinLimit(f, food.count) { // make sure f is a valid index
-                    if self.coordinates.inRange(of: food[f].position, radiusSquared: self.sightRadius*2) {
-                        let value = atan(abs(food[f].position.y - self.coordinates.y)/abs(self.coordinates.x - food[f].position.x))
-                        if (self.coordinates.x - food[f].position.x) >= 0 && (food[f].position.y - self.coordinates.y) >= 0 { // 1st quadrant works
-                            dir = (.pi) - value
-                            print("A")
-                        }
-                        else if (self.coordinates.x - food[f].position.x) <= 0 && (food[f].position.y - self.coordinates.y) <= 0 { // 3rd quadrant doesn't work
-                            dir = 2*(.pi) - value
-                            print("B")
-                        }
-                        else if (self.coordinates.x - food[f].position.x) >= 0 && (food[f].position.y - self.coordinates.y) <= 0 { // 4th quadrant works
-                            dir = value + (.pi)
-                            print("C")
-                        }
-                        else if (self.coordinates.x - food[f].position.x) <= 0 && (food[f].position.y - self.coordinates.y) >= 0 { // 2nd quadrant works
-                            dir = value
-                            print("D")
-                        }
-                        dir = 2*(.pi) - dir
-                        self.detectedFoodID = food[f].id
-                    }
+    mutating func forage(_ food: inout [Food]) {
+        for f in food.filter({ $0.lockedBy == nil }) {
+            if self.coordinates.inRange(of: f.position, radiusSquared: self.sightRadius*2) {
+                let value = atan(abs(f.position.y - self.coordinates.y)/abs(self.coordinates.x - f.position.x))
+                if (self.coordinates.x - f.position.x) >= 0 && (f.position.y - self.coordinates.y) >= 0 { // 1st quadrant works
+                    dir = (.pi) - value
+                    print("A")
                 }
+                else if (self.coordinates.x - f.position.x) <= 0 && (f.position.y - self.coordinates.y) <= 0 { // 3rd quadrant doesn't work
+                    dir = 2*(.pi) - value
+                    print("B")
+                }
+                else if (self.coordinates.x - f.position.x) >= 0 && (f.position.y - self.coordinates.y) <= 0 { // 4th quadrant works
+                    dir = value + (.pi)
+                    print("C")
+                }
+                else if (self.coordinates.x - f.position.x) <= 0 && (f.position.y - self.coordinates.y) >= 0 { // 2nd quadrant works
+                    dir = value
+                    print("D")
+                }
+                dir = 2*(.pi) - dir
+                food[food.firstIndex(where: {$0.id == f.id})!].lock(self)
             }
         }
     }
 
     mutating func eatFood(_ food: inout [Food]) {
-        if detectedFoodID == nil {
-            forage(food)
+        if food.first(where: {$0.lockedBy == self.id}) == nil {
+            forage(&food)
         } else {
-            if food.first(where: {$0.id == detectedFoodID!}) != nil {
-                if abs(food.first(where: {$0.id == detectedFoodID!})!.position.x - self.coordinates.x) <= 5 {
-                    if self.detectedFoodID != nil {
-                        let m = food.first(where: {$0.id == detectedFoodID!})!
-                        food.removeAll(where: {$0.id == detectedFoodID!})
-                        foodEnergy.append(m)
-                    }
-                    self.detectedFoodID = nil
-                }
+            if abs(food.first(where: {$0.lockedBy == self.id})!.position.x - self.coordinates.x) <= 5 {
+                foodEnergy.append(food.first(where: {$0.lockedBy == self.id})!)
+                food.removeAll(where:{$0.lockedBy == self.id})
             }
         }
     }
@@ -193,10 +183,17 @@ struct Food: Identifiable, Hashable {
     var energy: Double // foods with higher energy allow cells to survive longer
     var color: Color
     var position: Point
+    var lockedBy: UUID?
     init(energy: Double, color: Color, position: Point) {
         self.energy = energy
         self.color = color
         self.position = position
+        self.lockedBy = nil
+    }
+    mutating func lock(_ s: Species) {
+        if lockedBy == nil {
+            self.lockedBy = s.id
+        }
     }
 }
 
