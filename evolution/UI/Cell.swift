@@ -14,28 +14,24 @@ struct Cell: View {
     var size: CGSize
     init(_ species: Species, size: CGSize = CGSize(width: 20, height: 20)) {
         some_species = species
-        self.size = CGSize(width: CGFloat(species.size/2 + 20), height: CGFloat(species.size/2 + 20))
+        self.size = CGSize(width: CGFloat(species.size + 16), height: CGFloat(species.size + 16))
     }
     var body: some View {
         ZStack {
             Circle()
                 .strokeBorder(Color.black)
-                .frame(width: some_species.foodEnergy.count >= 1 ? size.width*1.2 : size.width, height: some_species.foodEnergy.count >= 1 ? size.width*1.2 : size.width)
-            Circle()
-                .strokeBorder(Color.black, lineWidth: 2, antialiased: true)
-                .clipShape(Circle())
-                .frame(width: some_species.foodEnergy.count >= 1 ? size.width*1.2 : size.width, height: some_species.foodEnergy.count >= 1 ? size.width*1.2 : size.width)
+                .frame(width: size.width, height: size.height)
             Circle()
                 .foregroundColor(some_species.color)
                 .opacity(0.2)
-                .frame(width: some_species.foodEnergy.count >= 1 ? size.width*1.2 : size.width, height: some_species.foodEnergy.count >= 1 ? size.width*1.2 : size.width)
+                .frame(width: size.width, height: size.width)
             LinearGradient(gradient: Gradient(colors: [some_species.color.darken(0.1), some_species.color.darken(0.2), some_species.color.darken(0.4), some_species.color.darken(0.6), some_species.color.darken(0.8)].reversed()), startPoint: .leading, endPoint: .trailing)
                 .clipShape(Arc(startAngle: .degrees(0), endAngle: angle(Int(some_species.lifespan), max: Int(some_species.maxLifespan)), clockwise: true).stroke(lineWidth: 2))
-                .frame(width: some_species.foodEnergy.count >= 1 ? size.width : size.width*0.8, height: some_species.foodEnergy.count >= 1 ? size.width : size.width*0.8)
+                .frame(width: size.width*0.8, height: size.width*0.8)
             LinearGradient(gradient: Gradient(colors: [some_species.color.lighten(0.7), some_species.color.lighten(0.6), some_species.color.lighten(0.9)]), startPoint: .leading, endPoint: .trailing)
                 .clipShape(Circle())
                 .overlay(Circle().strokeBorder(lineWidth: 0.5, antialiased: true).foregroundColor(.black))
-                .frame(width: 8, height: 8)
+                .frame(width: some_species.foodEnergy.count >= 1 ? 9 : 6, height: some_species.foodEnergy.count >= 1 ? 9 : 6)
             
         }
         .position(some_species.coordinates.cg())
