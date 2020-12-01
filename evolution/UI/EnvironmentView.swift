@@ -46,12 +46,11 @@ struct SingleFoodMolecule: View {
     }
     var body: some View {
         ZStack {
-            Circle()
+            Image(systemName: "circle.circle.fill")
+                .resizable()
                 .frame(width: 5, height: 5)
-                .foregroundColor(food.color)
-            Circle()
-                .strokeBorder(Color.darkblueGray)
-                .frame(width: 6, height: 6)
+                .foregroundColor(.black)
+                .opacity(0.7)
         }
         .position(food.position.cg())
     }
