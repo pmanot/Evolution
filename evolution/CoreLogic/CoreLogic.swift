@@ -33,9 +33,11 @@ public final class SpeciesEnvironment: ObservableObject { // the environment for
     @Published var alive: [Species] = [] // Array containing all currently alive species
     @Published var baseDNA: [SpeciesDNA] = []
     @Published var birthCapVal: Int = 50
+    @Published var speciesCount: [Double : Int]
     init(_ bounds: Bounds = Bounds(left: 50, right: 360, up: 150, down: 600)) {
         self.bounds = bounds
         food = []
+        speciesCount = [:]
     }
     func fetchFood(min: Int, max: Int) { // injects food into the environment
         food = []
@@ -44,11 +46,21 @@ public final class SpeciesEnvironment: ObservableObject { // the environment for
         }
     }
     func gen(coordinates: Point, lifespan: Double = Double.random(in: 100..<1000)) { // generates a species with random traits
-        alive.append(Species(name: "M", speed: Int.random(in: 0..<10), lifespan: lifespan, sight: CGFloat.random(in: 1..<5), coordinates: coordinates, bounds: bounds))
+        alive.append(Species(name: "M", speed: Int.random(in: 0..<10), lifespan: lifespan, sight: Int.random(in: 1..<5), coordinates: coordinates, bounds: bounds))
     }
     
-    func offspring(_ a: Species, b: Species) { // when two species love each other very very much...
-        alive.append(Species(name: a.identifier, speed: (a.speed + b.speed)/2 , lifespan: (a.maxLifespan + b.maxLifespan)/2, sight: (a.sightRadius + b.sightRadius)/2, coordinates: midPoint(a.coordinates, b.coordinates), bounds: bounds, color: a.color))
+    func replicate(_ s: Species) {
+        var offspring = Species(s.genome, lifespan: s.maxLifespan, bounds: self.bounds)
+        offspring.coordinates = s.coordinates
+        alive.append(offspring)
+        self.speciesCount.increment(offspring.genome.percentageComposition[baseDNA[0].identifier]!, by: 1)
+    }
+    
+    func makeOffspring(_ s1: Species, _ s2: Species) {
+        var offspring = Species(combine(s1.genome, s2.genome, variationRate: 0), lifespan: (s1.maxLifespan + s2.maxLifespan) / 2, bounds: self.bounds)
+        offspring.coordinates = s1.coordinates
+        alive.append(offspring)
+        self.speciesCount.increment(offspring.genome.percentageComposition[baseDNA[0].identifier]!, by: 1)
     }
     
     func respawn(n: Int) { // generates n number of new species with random traits
@@ -59,27 +71,31 @@ public final class SpeciesEnvironment: ObservableObject { // the environment for
     func reset() {
         alive = []
         food = []
+        speciesCount = [ : ]
     }
     
     func addSpecies(_ m: Species, n: Int = 1) {
         loop(n){
-            alive.append(Species(name: m.identifier, speed: m.speed, lifespan: m.lifespan, sight: m.sightRadius, infected: false, coordinates: randomPoint(bounds: self.bounds), bounds: self.bounds, color: m.color))
+            alive.append(Species(m.genome, lifespan: m.lifespan, bounds: m.bounds))
         }
+        self.speciesCount.increment(m.genome.percentageComposition[baseDNA[0].identifier]!, by: 1)
     }
     
-    func base(_ m: SpeciesDNA){
-        baseDNA.append(SpeciesDNA(m.identifier, speed: m.speed, sight: m.sight, size: m.size, color: m.color))
+    func base(_ a: SpeciesDNA, _ b: SpeciesDNA){
+        var baseA = SpeciesDNA(a.identifier, speed: a.speed, sight: a.sight, size: a.size, color: a.color)
+        var baseB = SpeciesDNA(b.identifier, speed: b.speed, sight: b.sight, size: b.size, color: b.color)
+        baseA.percentageComposition = [baseA.identifier : 1, baseB.identifier : 0]
+        baseB.percentageComposition = [baseA.identifier : 0, baseB.identifier : 1]
+        baseDNA = [baseA, baseB]
     }
     
     func makeFood(d: Species) {
         let id = d.id
         food.append(Food(energy: Double(d.maxLifespan)/1000, color: .green, position: d.coordinates))
-        alive.remove(id: id)
+        alive.remove(id: id){
+            self.speciesCount.increment(d.genome.percentageComposition[baseDNA[0].identifier]!, by: -1)
+        }
     }
-}
-
-func gen(_ name: String = "M", lifespan: Double = Double.random(in: 100..<1000), coordinates: Point = randomPoint(bounds: SpeciesEnvironment().bounds)) -> Species { // generates a species with random traits
-    Species(name: name, speed: Int(Double.random(in: 0..<10)), lifespan: lifespan, sight: CGFloat.random(in: 1..<5), coordinates: coordinates, bounds: SpeciesEnvironment().bounds)
 }
 
 func midPoint(_ a: Point, _ b: Point) -> Point {
@@ -88,7 +104,12 @@ func midPoint(_ a: Point, _ b: Point) -> Point {
 
 
 func combine(_ x: SpeciesDNA..., variationRate: Double) -> SpeciesDNA {
-    var m = SpeciesDNA(x.map{$0.identifier}.reduce(""){$0 + $1}, speed: x.map{$0.speed}.reduce(0, +)/x.count, sight: x.map{$0.sight}.reduce(0, +), size: x.map{$0.size}.reduce(0, +)/x.count, color: x.first!.color)
+    var m = SpeciesDNA(x.map{$0.identifier}.reduce(""){$0 + $1}, speed: x.map{$0.speed}.reduce(0, +)/x.count, sight: x.map{$0.sight}.reduce(0, +), size: x.map{$0.size}.reduce(0, +)/x.count, color: merge(x.map {$0.color}))
+    m.percentageComposition = [ : ]
+    for a in x {
+        m.percentageComposition.add(a.percentageComposition)
+    }
+    m.percentageComposition = m.percentageComposition.mapValues{ $0 / Double(x.count) }
     rate(variationRate){
         m.speed += Int.random(in: -1..<1)
         m.identifier += " [m]"

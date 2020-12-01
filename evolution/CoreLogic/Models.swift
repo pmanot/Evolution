@@ -163,18 +163,22 @@ struct Species: Identifiable, Hashable {
     }
 }
 
+
 struct SpeciesDNA: Hashable {
     var identifier: String
+    var percentageComposition: [String: Double]
     var speed: Int
-    var sight: Double
+    var sight: Int
     var size: Int
     var color: Color
-    init(_ identifier: String, speed: Int, sight: Double, size: Int, color: Color){
+    init(_ identifier: String, speed: Int, sight: Int, size: Int, color: Color){
         self.identifier = identifier
         self.speed = speed
         self.sight = sight
         self.size = size
         self.color = color
+        self.percentageComposition = [ : ]
+        self.percentageComposition[identifier] = 1
     }
 }
 
