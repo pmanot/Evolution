@@ -119,43 +119,28 @@ struct Species: Identifiable, Hashable {
         }
     }
     
-    mutating func forage(_ food: inout [Food]) {
-        for f in food.filter({ $0.lockedBy == nil }) {
-            if self.coordinates.inRange(of: f.position, radiusSquared: self.sightRadius*2) {
-                let value = atan(abs(f.position.y - self.coordinates.y)/abs(self.coordinates.x - f.position.x))
-                if (self.coordinates.x - f.position.x) >= 0 && (f.position.y - self.coordinates.y) >= 0 { // 1st quadrant works
-                    dir = (.pi) - value
-                    print("A")
-                }
-                else if (self.coordinates.x - f.position.x) <= 0 && (f.position.y - self.coordinates.y) <= 0 { // 3rd quadrant doesn't work
-                    dir = 2*(.pi) - value
-                    print("B")
-                }
-                else if (self.coordinates.x - f.position.x) >= 0 && (f.position.y - self.coordinates.y) <= 0 { // 4th quadrant works
-                    dir = value + (.pi)
-                    print("C")
-                }
-                else if (self.coordinates.x - f.position.x) <= 0 && (f.position.y - self.coordinates.y) >= 0 { // 2nd quadrant works
-                    dir = value
-                    print("D")
-                }
-                dir = 2*(.pi) - dir
-                food[food.firstIndex(where: {$0.id == f.id})!].lock(self)
+    mutating func forage(_ f: Food) {
+        if self.coordinates.inRange(of: f.position, radiusSquared: Double(self.squaredSightRadius)) {
+            let value = atan(abs(f.position.y - self.coordinates.y)/abs(self.coordinates.x - f.position.x))
+            if (self.coordinates.x - f.position.x) >= 0 && (f.position.y - self.coordinates.y) >= 0 { // 1st quadrant works
+                dir = (.pi) + value
+                print("A")
             }
+            else if (self.coordinates.x - f.position.x) <= 0 && (f.position.y - self.coordinates.y) <= 0 { // 3rd quadrant doesn't work
+                dir = value
+                print("B")
+            }
+            else if (self.coordinates.x - f.position.x) >= 0 && (f.position.y - self.coordinates.y) <= 0 { // 4th quadrant works
+                dir = (.pi) - value
+                print("C")
+            }
+            else if (self.coordinates.x - f.position.x) <= 0 && (f.position.y - self.coordinates.y) >= 0 { // 2nd quadrant works
+                dir = 2*(.pi) - value
+                print("D")
+            }
+            foodDetected = true
         }
     }
-
-    mutating func eatFood(_ food: inout [Food]) {
-        if food.first(where: {$0.lockedBy == self.id}) == nil {
-            forage(&food)
-        } else {
-            if abs(food.first(where: {$0.lockedBy == self.id})!.position.x - self.coordinates.x) <= 5 {
-                foodEnergy.append(food.first(where: {$0.lockedBy == self.id})!)
-                food.removeAll(where:{$0.lockedBy == self.id})
-            }
-        }
-    }
-    
     func replicate(_ speciesArray: inout Array<Species>){
         var offspring = Species(self.genome, lifespan: self.maxLifespan, bounds: self.bounds)
         offspring.coordinates = self.coordinates

@@ -91,9 +91,26 @@ public final class SpeciesEnvironment: ObservableObject { // the environment for
     
     func makeFood(d: Species) {
         let id = d.id
-        food.append(Food(energy: Double(d.maxLifespan)/1000, color: .green, position: d.coordinates))
         alive.remove(id: id){
+            food.append(Food(energy: Double(d.maxLifespan)/1000, color: d.color, position: d.coordinates))
             self.speciesCount.increment(d.genome.percentageComposition[baseDNA[0].identifier]!, by: -1)
+        }
+    }
+    
+    func foodFound(_ cell: Species ) {
+        for f in food {
+            if f.position.distanceSquared(to: cell.coordinates) <= Double(cell.squaredSightRadius) {
+                alive.mutate(id: cell.id, using: {$0.forage(f)})
+                if f.position.distanceSquared(to: cell.coordinates) <= 25 {
+                    alive.mutate(id: cell.id, using: {
+                        if !$0.foodEnergy.contains(f) {
+                            $0.foodEnergy.append(f)
+                            food.removeAll {$0.id == f.id}
+                        }
+                        $0.foodDetected = false
+                    })
+                }
+            }
         }
     }
 }
