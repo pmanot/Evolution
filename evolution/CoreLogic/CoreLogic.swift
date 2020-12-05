@@ -34,15 +34,29 @@ public final class SpeciesEnvironment: ObservableObject { // the environment for
     @Published var baseDNA: [SpeciesDNA] = []
     @Published var birthCapVal: Int = 50
     @Published var speciesCount: [Double : Int]
+    @Published var foodRate: Int
+    @Published var cellLifespan: Double
+    @Published var reproductionRate: Double
+    @Published var allowMutations: Bool = false
+    @Published var mutationRate: Double
+    @Published var mutationAmount: Int
+    @Published var mutationColor: Color = Color.tropicGreen
+    @Published var allowCrossBreeding: Bool = false
     init(_ bounds: Bounds = Bounds(left: 50, right: 360, up: 150, down: 600)) {
         self.bounds = bounds
         food = []
         speciesCount = [:]
+        foodRate = 20
+        cellLifespan = 300
+        reproductionRate = 0.002
+        mutationAmount = 1
+        mutationRate = 0.05
+        allowCrossBreeding = false
     }
     func fetchFood(min: Int, max: Int) { // injects food into the environment
         food = []
         loop(Int.random(in: min..<max)) {
-            food.append(Food(energy: Double.random(in: 0..<10), color: Bool.random() ? .green : .pink,  position: randomPoint(bounds: bounds)))
+            food.append(Food(energy: Double.random(in: 0..<10), color: .black,  position: randomPoint(bounds: bounds)))
         }
     }
     func gen(coordinates: Point, lifespan: Double = Double.random(in: 100..<1000)) { // generates a species with random traits
@@ -52,6 +66,9 @@ public final class SpeciesEnvironment: ObservableObject { // the environment for
     func replicate(_ s: Species) {
         var offspring = Species(s.genome, lifespan: s.maxLifespan, bounds: self.bounds)
         offspring.coordinates = s.coordinates
+        if allowMutations {
+            mutate(&offspring, variationRate: mutationRate, variationAmount: mutationAmount)
+        }
         alive.append(offspring)
         self.speciesCount.increment(offspring.genome.percentageComposition[baseDNA[0].identifier]!, by: 1)
     }
