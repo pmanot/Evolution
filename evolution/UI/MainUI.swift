@@ -179,71 +179,79 @@ struct MainUI: View {
                 }
             }
             .frame(width: geo.size.width, height: geo.size.height)
-            .background(DotMatrix(Int(geo.size.width), Int(geo.size.height))
+            .background(
+                ZStack {
+                    if (colorScheme == .dark) {
+                        DotMatrix(1.5, Int(geo.size.width), Int(geo.size.height))
+                        .position(x: geo.size.width/2, y: geo.size.height/2)
+                        .foregroundColor(.white)
+                        .edgesIgnoringSafeArea(.all)
+                    } else {
+                        DotMatrix(2.5, Int(geo.size.width), Int(geo.size.height))
                             .position(x: geo.size.width/2, y: geo.size.height/2)
-                            .foregroundColor(.lightBlueGray)
-                            .edgesIgnoringSafeArea(.all))
+                            .foregroundColor(.darkJungleGreen)
+                            .opacity(0.6)
+                            .edgesIgnoringSafeArea(.all)
+                    }
+                }
+            )
         }
         .onReceive(timer){ _ in
-            for n in 0..<env.alive.count {
-                if resetDay {
-                    env.alive[n].dayReset()
-                }
-                withinLimit(n, env.alive.count) { // make sure alive[n] is a valid index (sometimes n goes out of bounds while running due to glitchy behaviour with ForEach).
-                    env.alive[n].updatePos() //update position on-screen
-                        if env.alive[n].foodEnergy.count >= 1 {
-                            rate(0.002) { // 0.005 chance of birth per cell every 0.01 seconds, which is approximately 0.5 per second or 50 %
-                                env.alive[n].foodEnergy.removeFirst()
-                                env.alive[n].replicate(&env.alive)
+            for cell in env.alive {
+                env.alive.mutate(id: cell.id){ $0.update() }
+                if (cell.movementCounter == 10 - cell.speed) {
+                    env.alive.mutate(id: cell.id, using: {$0.updatePos()}) //update position on-screen
+                    DispatchQueue.main.async {
+                        env.alive.mutate(id: cell.id, using: {$0.updateDir()})
+                    }
+                    env.foodFound(cell)
+                        if cell.foodEnergy.count >= 1 {
+                            rate(env.reproductionRate*Double(cell.foodEnergy.count)) { // 0.005 chance of birth per cell every 0.01 seconds, which is approximately 0.5 per second or 50 %
+                                env.alive.mutate(id: cell.id, using: {
+                                    if $0.foodEnergy.first != nil {
+                                        $0.foodEnergy.removeFirst()
+                                    }
+                                })
+                                env.replicate(cell)
                                  //adding the offspring to the array of all currently env.alive species
                             }
                         }
-                    env.alive[n].onDeath {
-                        let dead = env.alive[n]
+                    cell.onDeath {
+                        let dead = cell
                         delay(0.2){
                             env.makeFood(d: dead)
                         }
                     }
-                    env.alive[n].eatFood(&env.food)
+                }
+                if resetDay {
+                    env.alive.mutate(id: cell.id, using: {$0.dayReset()})
                 }
             }
             resetDay = false
                 
-            updatePopulationLoop {
+            DispatchQueue.main.async(qos: .userInteractive) {
+                // print(env.alive.map { $0.foodEnergy.count }.reduce(0, +)) // food debugging
                 if env.baseDNA.count == 2 {
-                    if populationArrayA.last != Double(env.alive.filter {$0.identifier == env.baseDNA[0].identifier}.count) {
-                        populationArrayA.append(Double(env.alive.filter {$0.identifier == env.baseDNA[0].identifier}.count))
-                    }
-                    if populationArrayB.last != Double(env.alive.filter {$0.identifier == env.baseDNA[1].identifier}.count) {
-                        populationArrayB.append(Double(env.alive.filter {$0.identifier == env.baseDNA[1].identifier}.count))
+                    for key in env.speciesCount.keys {
+                        if chartData[key] != nil {
+                            chartData[key]!.update(value: env.speciesCount[key]!)
+                        }
+                        else if chartData[key] == nil {
+                            chartData[key] = ChartData(env.speciesCount[key]!, color: env.alive.map {$0.genome }.first { $0.percentageComposition[env.baseDNA[0].identifier] == key}!.color)
+                        }
                     }
                     if totalPopulation.last != Double(env.alive.count) {
                         totalPopulation.append(Double(env.alive.count))
                     }
+                    play = true
                 }
-                updatePopulationLoop = counter(5)
             }
-            
             foodLoop {
-                env.fetchFood(min: foodAmount, max: foodAmount + 5)
+                env.fetchFood(min: env.foodRate, max: env.foodRate + 3)
                 foodLoop = counter(1000)
                 resetDay = true
             }
         }
-        .fullScreenCover(isPresented: $createSpeciesView){
-            CreateSpecies()
-                .onAppear {
-                    paused = true
-                    self.timer.upstream.connect().cancel()
-                }
-                .onDisappear {
-                    paused = false
-                    self.timer = Timer.publish(every: 0.01, on: .main, in: .common).autoconnect()
-                    self.speciesColorGradients = [GradientColor(start: env.baseDNA.first!.color, end: env.baseDNA.first!.color), GradientColor(start: env.baseDNA.last!.color, end: env.baseDNA.last!.color)]
-                    print(env.baseDNA[0].sight)
-                }
-        }
-        
     }
 }
 

@@ -11,26 +11,26 @@ import SwiftUI
 //Species
 struct Species: Identifiable, Hashable {
     let id = UUID()
-    var genome: [SpeciesDNA]
+    var genome: SpeciesDNA
     var identifier: String
     var color: Color
     var foodEnergy: [Food]
     var speed: Int // scale of 1 - 10
     var size: Int = 1 // scale of 1 - 5
     var cost: Double {
-        Double(speed*size).mappedValue(inputRange: 1..<50, outputRange: 1..<2)
+        Double(speed*size).mappedValue(inputRange: 1..<100, outputRange: 1..<2)
     }
     var lifespan: Double
     var movementCounter: Int
-    var foodDetected: Bool = false
     let maxLifespan: Double
     var disabled: Bool // to be toggled at death, stops all calculations and movement
     var coordinates: Point // position of self
     var bounds: Bounds // boundaries to stop self from going out of given frame
     // var infected: Bool = false // coming soon
     var dir = CGFloat.random(in: 0..<2*(.pi)) //direction in radians
-    var sightRadius: Double
-    init(name: String, speed: Int, lifespan: Double, sight: Double = 5, infected: Bool = false, coordinates: Point = Point(x: 200, y: 300), bounds: Bounds = SpeciesEnvironment().bounds, color: Color = .green) {
+    var squaredSightRadius: Int
+    var foodDetected: Bool = false
+    init(name: String, speed: Int, lifespan: Double, sight: Int = 5, infected: Bool = false, coordinates: Point = Point(x: 200, y: 300), bounds: Bounds = SpeciesEnvironment().bounds, color: Color = .green) {
         self.identifier = name
         self.speed = speed
         self.lifespan = lifespan
@@ -38,53 +38,48 @@ struct Species: Identifiable, Hashable {
         // self.infected = infected
         self.coordinates = coordinates
         self.bounds = bounds
-        self.sightRadius = sight
+        self.squaredSightRadius = (size + 10)^2 + (sight*3)^2
         self.foodEnergy = []
         self.color = color
         self.disabled = false
         self.movementCounter = Int(10 - speed)
-        self.foodDetected = false
-        genome = []
-        genome.append(SpeciesDNA(name, speed: speed, sight: sight, size: self.size, color: self.color))
+        genome = SpeciesDNA(name, speed: speed, sight: sight, size: self.size, color: self.color)
     }
     
     init(_ base: SpeciesDNA, lifespan: Double, bounds: Bounds = SpeciesEnvironment().bounds) {
         identifier = base.identifier
         speed = base.speed
         color = base.color
+        size = base.size
         self.bounds = bounds
         self.lifespan = lifespan
-        self.sightRadius = base.sight
+        self.squaredSightRadius = (base.size + 15)^2 + (base.sight*3)^2
         self.coordinates = randomPoint(bounds: bounds)
         self.foodEnergy = []
         self.maxLifespan = lifespan
         self.disabled = false
-        self.movementCounter = Int(10 - speed)
-        self.foodDetected = false
-        genome = []
-        genome.append(base)
+        self.movementCounter = 10 - speed
+        genome = base
     }
     
     mutating func updatePos() { // updates the xy position of a cell (called at fixed intervals of time)
         if !disabled {
-            if movementCounter <= 0 {
-                movementCounter = Int(10 - speed)
-            }
-            if movementCounter == Int(10 - speed) {
-                coordinates.x += cos(dir)*10 //increase the x position
-                coordinates.y -= sin(dir)*10 //increase the y position
-                if !foodDetected {
-                    updateDir()
-                }
-                lifespan -= cost // 1 step
-                avoidBounds()
-            }
-            movementCounter -= 1
-            if foodEnergy.count >= 1 {
-                lifespan = maxLifespan
-            }
+            coordinates.x += cos(dir)*5 //increase the x position
+            coordinates.y -= sin(dir)*5 //increase the y position
+            lifespan -= cost // 1 step
+            avoidBounds()
         }
         disabled = lifespan <= 0
+    }
+    
+    mutating func update() {
+        movementCounter -= 1
+        if movementCounter <= 0 {
+            movementCounter = 10 - speed
+        }
+        if foodEnergy.count >= 1 {
+            lifespan = maxLifespan
+        }
     }
     
     mutating func dayReset(){
