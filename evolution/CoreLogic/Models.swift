@@ -7,18 +7,15 @@
 
 import Foundation
 import SwiftUI
+import SwiftUICharts
 
 //Species
 struct Species: Identifiable, Hashable {
     let id = UUID()
     var genome: SpeciesDNA
-    var identifier: String
-    var color: Color
     var foodEnergy: [Food]
-    var speed: Int // scale of 1 - 10
-    var size: Int = 1 // scale of 1 - 5
     var cost: Double {
-        Double(speed*size).mappedValue(inputRange: 1..<100, outputRange: 1..<2)
+        Double(genome.speed*genome.size).mappedValue(inputRange: 1..<100, outputRange: 1..<2)
     }
     var lifespan: Double
     var movementCounter: Int
@@ -30,35 +27,28 @@ struct Species: Identifiable, Hashable {
     var dir = CGFloat.random(in: 0..<2*(.pi)) //direction in radians
     var squaredSightRadius: Int
     var foodDetected: Bool = false
-    init(name: String, speed: Int, lifespan: Double, sight: Int = 5, infected: Bool = false, coordinates: Point = Point(x: 200, y: 300), bounds: Bounds = SpeciesEnvironment().bounds, color: Color = .green) {
-        self.identifier = name
-        self.speed = speed
+    init(name: String, speed: Int, size: Int = 1, lifespan: Double, sight: Int = 5, infected: Bool = false, coordinates: Point = Point(x: 200, y: 300), bounds: Bounds = SpeciesEnvironment().bounds, color: Color = .green) {
         self.lifespan = lifespan
         self.maxLifespan = lifespan
         // self.infected = infected
         self.coordinates = coordinates
         self.bounds = bounds
-        self.squaredSightRadius = (size + 10)^2 + (sight*3)^2
+        self.squaredSightRadius = (size + 15)^2 + (sight*3)^2
         self.foodEnergy = []
-        self.color = color
         self.disabled = false
-        self.movementCounter = Int(10 - speed)
-        genome = SpeciesDNA(name, speed: speed, sight: sight, size: self.size, color: self.color)
+        self.movementCounter = 10 - speed
+        genome = SpeciesDNA(name, speed: speed, sight: sight, size: size, color: color)
     }
     
-    init(_ base: SpeciesDNA, lifespan: Double, bounds: Bounds = SpeciesEnvironment().bounds) {
-        identifier = base.identifier
-        speed = base.speed
-        color = base.color
-        size = base.size
+    init(_ base: SpeciesDNA, lifespan: Double, bounds: Bounds = SpeciesEnvironment().bounds, coordinates: Point = Point(x: 200, y: 300)) {
         self.bounds = bounds
         self.lifespan = lifespan
         self.squaredSightRadius = (base.size + 15)^2 + (base.sight*3)^2
-        self.coordinates = randomPoint(bounds: bounds)
+        self.coordinates = coordinates
         self.foodEnergy = []
         self.maxLifespan = lifespan
         self.disabled = false
-        self.movementCounter = 10 - speed
+        self.movementCounter = 10 - base.speed
         genome = base
     }
     
@@ -75,7 +65,7 @@ struct Species: Identifiable, Hashable {
     mutating func update() {
         movementCounter -= 1
         if movementCounter <= 0 {
-            movementCounter = 10 - speed
+            movementCounter = 10 - genome.speed
         }
         if foodEnergy.count >= 1 {
             lifespan = maxLifespan
@@ -89,10 +79,12 @@ struct Species: Identifiable, Hashable {
         foodEnergy = []
     }
     
-    mutating func updateDir(_ rStart: CGFloat = -0.02, _ rEnd: CGFloat = 0.02) { // changes the direction of a cell slightly from its given direction
-        dir += CGFloat.random(in: rStart..<rEnd)
-        if dir > 2*(.pi) || dir < 0 { // make sure direction stays within the range of a full rotation (2pi)
-            dir = CGFloat.random(in: 0..<2*(.pi))
+    mutating func updateDir(_ rStart: CGFloat = -0.05, _ rEnd: CGFloat = 0.05) { // changes the direction of a cell slightly from its given direction
+        if !foodDetected {
+            dir += CGFloat.random(in: rStart..<rEnd)
+            if dir > 2*(.pi) || dir < 0 { // make sure direction stays within the range of a full rotation (2pi)
+                dir = CGFloat.random(in: 0..<2*(.pi))
+            }
         }
     }
     
@@ -100,10 +92,6 @@ struct Species: Identifiable, Hashable {
         if disabled {
             x()
         }
-    }
-    
-    func remove(from arr: inout [Species]) {
-        arr.removeAll(where: { $0.id == self.id })
     }
     
     mutating func avoidBounds() { // bounds collision function to prevent cells from going out of bound
@@ -119,27 +107,22 @@ struct Species: Identifiable, Hashable {
             let value = atan(abs(f.position.y - self.coordinates.y)/abs(self.coordinates.x - f.position.x))
             if (self.coordinates.x - f.position.x) >= 0 && (f.position.y - self.coordinates.y) >= 0 { // 1st quadrant works
                 dir = (.pi) + value
-                print("A")
+                //print("A")
             }
             else if (self.coordinates.x - f.position.x) <= 0 && (f.position.y - self.coordinates.y) <= 0 { // 3rd quadrant doesn't work
                 dir = value
-                print("B")
+                //print("B")
             }
             else if (self.coordinates.x - f.position.x) >= 0 && (f.position.y - self.coordinates.y) <= 0 { // 4th quadrant works
                 dir = (.pi) - value
-                print("C")
+                //print("C")
             }
             else if (self.coordinates.x - f.position.x) <= 0 && (f.position.y - self.coordinates.y) >= 0 { // 2nd quadrant works
                 dir = 2*(.pi) - value
-                print("D")
+                //print("D")
             }
             foodDetected = true
         }
-    }
-    func replicate(_ speciesArray: inout Array<Species>){
-        var offspring = Species(self.genome, lifespan: self.maxLifespan, bounds: self.bounds)
-        offspring.coordinates = self.coordinates
-        speciesArray.append(offspring)
     }
 }
 
@@ -167,17 +150,10 @@ struct Food: Identifiable, Hashable {
     var energy: Double // foods with higher energy allow cells to survive longer
     var color: Color
     var position: Point
-    var lockedBy: UUID?
     init(energy: Double, color: Color, position: Point) {
         self.energy = energy
         self.color = color
         self.position = position
-        self.lockedBy = nil
-    }
-    mutating func lock(_ s: Species) {
-        if lockedBy == nil {
-            self.lockedBy = s.id
-        }
     }
 }
 
@@ -203,40 +179,32 @@ struct Bounds: Hashable { // used to define the boundaries of a frame
 struct Point: Hashable, Strideable { // Custom CGPoint struct that conforms to Hashable and Strideable
     var x: CGFloat
     var y: CGFloat
-    func distanceSquared(to other: Point) -> Double { // calculates the distance between two points
-        let delta_x2 = Double(self.x - other.x).magnitudeSquared
-        let delta_y2 = Double(self.y - other.y).magnitudeSquared
-        return (delta_x2 + delta_y2)
-    }
-    
-    func distance(to other: Point) -> CGFloat { // calculates the distance between two points
-        let delta_x2 = Double(self.x - other.x).magnitudeSquared
-        let delta_y2 = Double(self.y - other.y).magnitudeSquared
-        return CGFloat((delta_x2 + delta_y2)).squareRoot()
-    }
-    
-    func advanced(by n: CGFloat) -> Point {
-        Point(x: self.x + n, y: self.y + n)
-    }
-    
-    func line(_ a: Point, _ b: Point) -> (m: Double, c: Double) { // returns the gradient and y intercept of a line made by two points
-        let m = Double((a.y - b.y) / (a.x - b.x))
-        return (m: Double((a.y - b.y) / (a.x - b.x)), c: (Double(y) - m*Double(x)))
-    }
-    
-    func liesOn(_ a: Point, _ b: Point) -> Bool { // returns true if point lies on a line (ie. all 3 points are collinear)
-        let l = line(a, b)
-        return Double(self.y) == Double(self.x)*l.m + l.c
-    }
-    
-    func inRange(of point: Point, radiusSquared: Double = 25) -> Bool { // used to detect a collision / touch between two objects
-        if !(Double(abs(self.y - point.y)) >= radiusSquared) && !(Double(abs(self.y - point.y)) >= radiusSquared) {
-            return self.distanceSquared(to: point) <= radiusSquared
-        }
-        return false
-    }
 }
 
 func delay(_ time: Double, _ x: @escaping () -> ()){
     DispatchQueue.main.asyncAfter(deadline: .now() + time, execute: x)
+}
+
+struct ChartData {
+    var data: [Double]
+    var gradientColor: GradientColor
+    init(_ data: Int, color: Color) {
+        self.data = [0]
+        self.data.append(Double(data))
+        self.gradientColor = color.gC()
+    }
+    
+    mutating func reset() {
+        data = [0]
+    }
+    
+    mutating func update(value: Int) {
+        if data.last ?? 0 != Double(value) {
+            data.append(Double(value))
+        }
+    }
+    
+    func tuple() -> ([Double], GradientColor) {
+        (self.data, self.gradientColor)
+    }
 }
