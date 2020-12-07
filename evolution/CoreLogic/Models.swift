@@ -22,17 +22,15 @@ struct Species: Identifiable, Hashable {
     let maxLifespan: Double
     var disabled: Bool // to be toggled at death, stops all calculations and movement
     var coordinates: Point // position of self
-    var bounds: Bounds // boundaries to stop self from going out of given frame
     // var infected: Bool = false // coming soon
     var dir = CGFloat.random(in: 0..<2*(.pi)) //direction in radians
     var squaredSightRadius: Int
     var foodDetected: Bool = false
-    init(name: String, speed: Int, size: Int = 1, lifespan: Double, sight: Int = 5, infected: Bool = false, coordinates: Point = Point(x: 200, y: 300), bounds: Bounds = SpeciesEnvironment().bounds, color: Color = .green) {
+    init(name: String, speed: Int, size: Int = 1, lifespan: Double, sight: Int = 5, infected: Bool = false, coordinates: Point = Point(x: 200, y: 300), color: Color = .green) {
         self.lifespan = lifespan
         self.maxLifespan = lifespan
         // self.infected = infected
         self.coordinates = coordinates
-        self.bounds = bounds
         self.squaredSightRadius = (size + 15)^2 + (sight*3)^2
         self.foodEnergy = []
         self.disabled = false
@@ -40,8 +38,7 @@ struct Species: Identifiable, Hashable {
         genome = SpeciesDNA(name, speed: speed, sight: sight, size: size, color: color)
     }
     
-    init(_ base: SpeciesDNA, lifespan: Double, bounds: Bounds = SpeciesEnvironment().bounds, coordinates: Point = Point(x: 200, y: 300)) {
-        self.bounds = bounds
+    init(_ base: SpeciesDNA, lifespan: Double, coordinates: Point = Point(x: 200, y: 300)) {
         self.lifespan = lifespan
         self.squaredSightRadius = (base.size + 15)^2 + (base.sight*3)^2
         self.coordinates = coordinates
@@ -52,12 +49,12 @@ struct Species: Identifiable, Hashable {
         genome = base
     }
     
-    mutating func updatePos() { // updates the xy position of a cell (called at fixed intervals of time)
+    mutating func updatePos(bounds: Bounds) { // updates the xy position of a cell (called at fixed intervals of time)
         if !disabled {
             coordinates.x += cos(dir)*5 //increase the x position
             coordinates.y -= sin(dir)*5 //increase the y position
             lifespan -= cost // 1 step
-            avoidBounds()
+            avoidBounds(bounds: bounds)
         }
         disabled = lifespan <= 0
     }
@@ -94,7 +91,7 @@ struct Species: Identifiable, Hashable {
         }
     }
     
-    mutating func avoidBounds() { // bounds collision function to prevent cells from going out of bound
+    mutating func avoidBounds(bounds: Bounds) { // bounds collision function to prevent cells from going out of bound
         if coordinates.x < bounds.left || coordinates.x > bounds.right || coordinates.y > bounds.down || coordinates.y < bounds.up {
             coordinates.x.cap(bounds.left..<bounds.right)
             coordinates.y.cap(bounds.up..<bounds.down)
