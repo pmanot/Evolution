@@ -14,7 +14,7 @@ struct SpeciesInfoView: View {
     var size: CGSize
     init(_ species: Species) {
         some_species = species
-        self.size = CGSize(width: CGFloat(species.size/2 + 20), height: CGFloat(species.size/2 + 20))
+        self.size = CGSize(width: CGFloat(species.genome.size/2 + 20), height: CGFloat(species.genome.size/2 + 20))
     }
     var body: some View {
         ZStack {
